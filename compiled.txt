@@ -1,888 +1,1015 @@
-function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
-function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
 const DOMO = {
-  context: null,
-  addQuery: "",
-  addColumn: "",
-  columns: ['Ordered Units - MFG', 'Units Ordered', 'Shipped Units - SRC', 'Foreign - Ordered Product Sales (OPS)', 'Foreign - Ordered Revenue - MFG', 'Foreign - Shipped COGS - SRC', 'Ordered Product Sales (OPS)', 'Ordered Revenue - MFG', 'Product Name', 'Sessions', 'Glance Views', 'Date String', "SKU", "Client SKU", "Client Title", "Data Type ID", "Product ID", "(Child) ASIN"],
-  getEnv: function () {
-    var _ref = _asyncToGenerator(function* () {
-      let env = null;
-      try {
-        env = domo.env;
-      } catch (err) {
-        env = false;
-      }
-      // console.log(env)
-      return env;
-    });
-    return function getEnv() {
-      return _ref.apply(this, arguments);
-    };
-  }(),
-  getColumns: function () {
-    var _ref2 = _asyncToGenerator(function* () {
-      let data = yield domo.post('/sql/v1/dataset0', `SELECT * from dataset0 limit 1`, {
-        contentType: 'text/plain'
-      });
-      console.log({
-        getColumns: data
-      });
-      return data;
-    });
-    return function getColumns() {
-      return _ref2.apply(this, arguments);
-    };
-  }(),
-  getClientTitles: function () {
-    var _ref3 = _asyncToGenerator(function* () {
-      let client = [];
-      let sql = `SELECT "Product ID" FROM dataset0 ${DOMO.addQuery} GROUP BY "Product ID"`;
-      // console.log({sql})
+	context: null,
+	addQuery: "",
+	addColumn: "",
+	columns:  [
+        'Ordered Units - MFG',
+        'Units Ordered',
+        'Shipped Units - SRC',
+        'Foreign - Ordered Product Sales (OPS)',
+        'Foreign - Ordered Revenue - MFG',
 
-      let data = yield domo.post('/sql/v1/dataset0', sql, {
-        contentType: 'text/plain'
-      });
-      console.log({
-        getClientTitles: data
-      });
-      data = data.rows.map(x => x[0]);
-      // client = data.rows.map( x => x[2]).filter( x => x != '')	
-      client = data.filter(x => ![undefined, null, ""].includes(x));
-      console.log({
-        client,
-        sql
-      });
-      return client;
-    });
-    return function getClientTitles() {
-      return _ref3.apply(this, arguments);
-    };
-  }(),
-  getYearData: function () {
-    var _ref4 = _asyncToGenerator(function* (value) {
-      // let url = `/data/v1/dataset0?fields=${DOMO.columns.join(",")}&filter='SKU'=='${value}'`
-      // // let url = `/data/v1/dataset0?fields=${DOMO.columns.join(",")}&filter='Product ID'==${value}`
-      // let url = `/data/v1/dataset0?fields=${DOMO.columns.join(",")}&filter=Product ID in [${value.map(x => `'${x}'`).join(",")}]`
-      // console.log({url})
-      // let resp = await domo.get(url)
-      // console.log({clientList: value})
-      let sql = `SELECT 
-					${DOMO.columns.map(x => `"${x}"`).join(",")} 
+        'Foreign - Shipped COGS - SRC',
+        'Ordered Product Sales (OPS)',
+        'Ordered Revenue - MFG',
+        'Product Name',
+        'Sessions',
+        'Glance Views',
+        'Date String',
+        "SKU",
+        "Client SKU",
+        "Client Title",
+      	"Data Type ID",
+      	"Product ID",
+      	"(Child) ASIN"
+        ],	
+
+	getEnv: async () => {	
+		let env = null
+
+		try {
+			env = domo.env 
+		}catch(err) {
+			
+			env = false
+		}
+		// console.log(env)
+		return env
+	},
+	getColumns: async () => {
+		 let data = await domo.post('/sql/v1/dataset0',
+	    `SELECT * from dataset0 limit 1`, 
+	    {contentType: 'text/plain'})
+		 console.log({getColumns: data})
+		 return data
+	},
+	getClientTitles : async () => {
+
+
+
+	 	let client = []
+	 	
+	    let sql = `SELECT "Product ID" FROM dataset0 ${DOMO.addQuery} GROUP BY "Product ID"`
+	    // console.log({sql})
+
+	    let data = await domo.post('/sql/v1/dataset0',
+	    sql, 
+	    {contentType: 'text/plain'})
+	    console.log({getClientTitles: data})
+	    data = data.rows.map( x => x[0])
+	    // client = data.rows.map( x => x[2]).filter( x => x != '')	
+	    client = data.filter( x => ![undefined, null, ""].includes(x))
+
+	    console.log({client, sql})
+	    return client
+	},
+	getYearData :async (value) => {
+		
+		
+
+		// let url = `/data/v1/dataset0?fields=${DOMO.columns.join(",")}&filter='SKU'=='${value}'`
+		// // let url = `/data/v1/dataset0?fields=${DOMO.columns.join(",")}&filter='Product ID'==${value}`
+		// let url = `/data/v1/dataset0?fields=${DOMO.columns.join(",")}&filter=Product ID in [${value.map(x => `'${x}'`).join(",")}]`
+		// console.log({url})
+		// let resp = await domo.get(url)
+		// console.log({clientList: value})
+		let sql = `SELECT 
+					${DOMO.columns.map( x => `"${x}"`).join(",")} 
 					FROM 
 					dataset0 
-					WHERE "Product ID" IN (${value.map(x => `'${x}'`).join(",")}) 
-					AND "Data Type ID" IN (1,6) `;
-      sql = sql.replaceAll("\n", " ").replaceAll("\t", "");
-      // console.log({clientList: value, query: sql})	
-      let resp = yield domo.post('/sql/v1/dataset0', sql, {
-        contentType: 'text/plain'
-      });
-      console.log({
-        dataColumns: resp.columns
-      });
-      let dataArr = [];
-      resp.rows.forEach((x, i) => {
-        let dataObj = {};
-        x.forEach((xx, ii) => {
-          dataObj[resp.columns[ii]] = ["DOUBLE", "LONG"].includes(resp.metadata[ii].type) && resp.columns[ii] != "Product ID" ? Number(xx) : xx;
-        });
-        dataArr.push(dataObj);
-      });
-      resp = dataArr;
+					WHERE "Product ID" IN (${value.map( x => `'${x}'`).join(",")}) 
+					AND "Data Type ID" IN (1,6) `
+		sql = sql.replaceAll("\n", " ").replaceAll("\t","")
+		// console.log({clientList: value, query: sql})	
+		 let resp = await domo.post('/sql/v1/dataset0',
+	    sql, 
+	    {contentType: 'text/plain'})
 
-      // resp = resp.filter( x => x["Product ID"] != "")
-      // console.log({resp})
-      return resp;
+		 console.log({dataColumns: resp.columns})
+		 let dataArr = []
+		 resp.rows.forEach( (x, i) => {
+		 	let dataObj = {}
+		 	x.forEach( (xx, ii) => {
 
-      // let data = []
-      //  data = resp.sort(function(a,b){
-      //     return new Date(b['Date String']) - new Date(a['Date String']);
-      // });
-      // console.log({data})
-      // return data
-    });
-    return function getYearData(_x) {
-      return _ref4.apply(this, arguments);
-    };
-  }(),
-  onFilterUpdate: function () {
-    var _ref5 = _asyncToGenerator(function* (setData, filterUpdates, setClientsLoaded) {
-      domo.onFiltersUpdate(e => {
-        setClientsLoaded(false);
-        let operandWord = ["GREATER_THAN", "GREAT_THAN_EQUALS_TO", "LESS_THAN", "LESS_THAN_EQUALS_TO", "BETWEEN", "EQUALS", "NOT_EQUALS", "IN"];
-        let operandSql = [">", ">=", "<", "<=", "BETWEEN", "=", "<>", "IN"];
-        let includeList = [];
-        let queryList = [];
-        let columnList = [];
-        if (e.length == 0) {
-          console.log("no filters");
-          DOMO.addQuery = "";
-          DOMO.addColumn = "";
-          // getClientList()
-          filterUpdates();
-          return;
-        }
-        e.forEach(x => {
-          let operand = -1;
-          operandWord.forEach((xx, ii) => {
-            if (xx == x.operand) operand = ii;
-          });
-          let formatValue = x.values;
-          if (x.operand == "IN") {
-            formatValue = `${typeof x.values == "object" ? `(${x.values.map(xxx => typeof xxx == 'string' ? `'${xxx}'` : xxx).join(",")})` : x.values}`;
-          }
-          if (x.operand == "BETWEEN") {
-            formatValue = `${x.values[0]} AND ${x.values[1]}`;
-          }
-          queryList.push(`"${x.column}" ${operandSql[operand]} ${formatValue}`);
-          columnList.push(x.column);
-          // console.log({operand, word: x.operand, sql: operandSql[operand], formatValue, values: x.values})
-        });
+		 		dataObj[resp.columns[ii]] = ["DOUBLE", "LONG"].includes(resp.metadata[ii].type) && resp.columns[ii] != "Product ID"  ? Number(xx) : xx
+		 	})
 
-        // console.log(queryList.join(" AND "), e)
-        queryList = queryList.join(" AND ");
-        DOMO.addQuery = `WHERE ${queryList}`;
-        DOMO.addColumn = (() => {
-          let columnString = "";
-          if (columnList.length > 0) {
-            columnString = `,${columnList.map(x => `"${x}"`).join(",")}`;
-          }
-          return columnList;
-        })();
-        // getClientList()
-        filterUpdates();
-      });
-      return;
-    });
-    return function onFilterUpdate(_x2, _x3, _x4) {
-      return _ref5.apply(this, arguments);
-    };
-  }()
-};
-const valueCalculator = (field, dataset, week, context) => {
-  if (field == '' || dataset == null) {
-    return '';
-  }
-  const {
-    vendor,
-    currency
-  } = context;
+		 	dataArr.push(dataObj)
+		 })
 
-  // console.log({ vendor, currency})
+		 resp = dataArr
 
-  dataset = dataset.filter(x => {
-    let date = week;
-    let date1 = new Date(date),
-      from = new Date(date).getTime();
-    let to = new Date(date1.setDate(date1.getDate() + 7)).getTime();
-    let xdate = new Date(x["Date String"]).getTime();
-    if (isNaN(xdate)) return false;
+		 // resp = resp.filter( x => x["Product ID"] != "")
+		  // console.log({resp})
+		 return resp
+		
+		 // let data = []
+		//  data = resp.sort(function(a,b){
+        //     return new Date(b['Date String']) - new Date(a['Date String']);
+        // });
+		 // console.log({data})
+		// return data
 
-    // console.log({from, to, xdate, in: xdate >= from && xdate <= to})
-    return from <= xdate && to >= xdate;
-  });
+	},
+	onFilterUpdate: async (setData, filterUpdates, setClientsLoaded) => {
 
-  // console.log({field, dataset, week, vendor})	
+		
 
-  if (field == 'units') {
-    let val1 = 0,
-      val2 = 0;
-    if (!vendor) {
-      // console.log({field, currency, vendor})
-      val1 = dataset.map(x => x['Units Ordered'] ? x['Units Ordered'] : 0);
-      val2 = dataset.map(x => x['Ordered Units - MFG'] ? x['Ordered Units - MFG'] : 0);
-    }
-    if (vendor) {
-      // console.log({field, currency, vendor})
-      val1 = dataset.map(x => x['Units Ordered'] ? x['Units Ordered'] : 0);
-      val2 = dataset.map(x => x['Ordered Units - MFG'] ? x['Shipped Units - SRC'] : 0);
-    }
-    val1 = val1.reduce((partialSum, a) => partialSum + a, 0);
-    val2 = val2.reduce((partialSum, a) => partialSum + a, 0);
+		domo.onFiltersUpdate( e =>  {	
+			setClientsLoaded(false)
+			
+			let operandWord = [
+				"GREATER_THAN", 
+				"GREAT_THAN_EQUALS_TO",
+				"LESS_THAN",
+				"LESS_THAN_EQUALS_TO",
+				"BETWEEN",
+				"EQUALS",
+				"NOT_EQUALS",
+				"IN"
+			];
 
-    // console.log({field,val1, val2, sum: val1+ val2, week})
+			let operandSql = [">",">=","<","<=","BETWEEN","=","<>","IN"]
 
-    return val1 + val2;
-  }
-  if (field == 'sales') {
-    let val1 = 0,
-      val2 = 0;
-    if (!currency && !vendor) {
-      val1 = dataset.map(x => x['Foreign - Ordered Product Sales (OPS)'] ? x['Foreign - Ordered Product Sales (OPS)'] : 0);
-      val2 = dataset.map(x => x['Foreign - Ordered Revenue - MFG'] ? x['Foreign - Ordered Revenue - MFG'] : 0);
-    }
-    if (currency && !vendor) {
-      val1 = dataset.map(x => x['Foreign - Ordered Product Sales (OPS)'] ? x['Foreign - Ordered Product Sales (OPS)'] : 0);
-      val2 = dataset.map(x => x['Foreign - Shipped COGS - SRC'] ? x['Foreign - Shipped COGS - SRC'] : 0);
-    }
-    if (currency && vendor) {
-      val1 = dataset.map(x => x['Ordered Product Sales (OPS)'] ? x['Ordered Product Sales (OPS)'] : 0);
-      val2 = dataset.map(x => x['Ordered Revenue - MFG'] ? x['Ordered Revenue - MFG'] : 0);
-    }
-    if (!currency && vendor) {
-      val1 = dataset.map(x => x['Ordered Product Sales (OPS)'] ? x['Ordered Product Sales (OPS)'] : 0);
-      val2 = dataset.map(x => x['Shipped COGS - SRC'] ? x['Shipped COGS - SRC'] : 0);
-    }
-    val1 = val1.reduce((partialSum, a) => partialSum + a, 0);
-    val2 = val2.reduce((partialSum, a) => partialSum + a, 0);
+			let includeList = []
+			let queryList = []
+			let columnList = []
 
-    // console.log({field,val1, val2, sum: val1+ val2})
-    return val1 + val2;
-  }
-  if (field == 'sessions') {
-    let val1 = dataset.map(x => x['Sessions'] ? x['Sessions'] : 0),
-      val2 = dataset.map(x => x['Glance Views'] ? x['Glance Views'] : 0);
-    val1 = val1.reduce((partialSum, a) => partialSum + a, 0);
-    val2 = val2.reduce((partialSum, a) => partialSum + a, 0);
+			
+			
+			if(e.length == 0) {
+				
+				console.log("no filters")
+				DOMO.addQuery = ""
+				DOMO.addColumn = ""
+				// getClientList()
+				filterUpdates()
+				return
+			}
+			
+			e.forEach( x => {
+				let operand = -1
+				operandWord.forEach( (xx, ii) => {
+					if(xx == x.operand) operand = ii
+				})
+				let formatValue = x.values;
+				if(x.operand == "IN") {
+					formatValue = `${(typeof x.values == "object") ? `(${x.values.map(xxx =>( typeof xxx) == 'string' ? `'${xxx}'`: xxx).join(",")})` : x.values}` 
+				}
+				if(x.operand  == "BETWEEN") {
+					formatValue =  `${x.values[0]} AND ${x.values[1]}`
+				}
+				queryList.push(`"${x.column}" ${operandSql[operand]} ${formatValue}` )
+				columnList.push(x.column)
+				// console.log({operand, word: x.operand, sql: operandSql[operand], formatValue, values: x.values})
+			})
 
-    // console.log({field,val1, val2, sum: val1+ val2})
-    return val1 + val2;
-  }
-  if (field == 'cvr') {
-    let dividen = {
-      val1: 0,
-      val2: 0,
-      sum: 0
-    };
-    let divisor = {
-      val1: 0,
-      val2: 0,
-      sum: 0
-    };
-    dividen.val1 = dataset.map(x => x['Units Ordered'] ? x['Units Ordered'] : 0);
-    dividen.val2 = dataset.map(x => x['Ordered Units - MFG'] ? x['Ordered Units - MFG'] : 0);
-    divisor.val1 = dataset.map(x => x['Sessions'] ? x['Sessions'] : 0);
-    divisor.val2 = dataset.map(x => x['Glance Views'] ? x['Glance Views'] : 0);
-    dividen.val1 = dividen.val1.reduce((partialSum, a) => partialSum + a, 0);
-    dividen.val2 = dividen.val2.reduce((partialSum, a) => partialSum + a, 0);
-    divisor.val1 = divisor.val1.reduce((partialSum, a) => partialSum + a, 0);
-    divisor.val2 = divisor.val2.reduce((partialSum, a) => partialSum + a, 0);
-    dividen.sum = dividen.val1 + dividen.val2;
-    divisor.sum = divisor.val1 + divisor.val2;
+			// console.log(queryList.join(" AND "), e)
+			queryList = queryList.join(" AND ")
+			DOMO.addQuery =  `WHERE ${queryList}`
+			DOMO.addColumn = (() => {
+				let columnString = "";
+				if(columnList.length > 0) {
+					columnString = `,${columnList.map( x => `"${x}"`).join(",")}`
+				}
+				return columnList
+			})()
+			// getClientList()
+			filterUpdates()
 
-    // return `${dividen.sum} / ${divisor.sum}`
-    // console.log({field, dividen, divisor, product: dividen.sum/divisor.sum})
-    return isFinite(dividen.sum / divisor.sum) ? dividen.sum / divisor.sum : "";
-  }
-};
+		})
+		return
+	}
+}
+
+
+const valueCalculator =  (field, dataset, week, context) => {
+
+	if(field == '' || dataset == null  ) {
+		return ''
+	}
+
+	const { vendor, currency} = context
+
+	// console.log({ vendor, currency})
+
+	
+	dataset =  dataset.filter( x => {
+
+		let date = week
+
+		let date1 = new Date(date), from = new Date(date).getTime()
+		let to = new Date(date1.setDate(date1.getDate()+7)).getTime()
+		let xdate = new Date(x["Date String"]).getTime() 
+
+		if(isNaN(xdate)) return false
+
+		// console.log({from, to, xdate, in: xdate >= from && xdate <= to})
+		return from <= xdate && to >= xdate
+	})
+
+	// console.log({field, dataset, week, vendor})	
+
+	if(field == 'units') {
+
+		let val1 = 0, val2 = 0
+
+		if(!vendor) {
+			// console.log({field, currency, vendor})
+			val1 = dataset.map( x => x['Units Ordered'] ? x['Units Ordered'] : 0)
+			val2 = dataset.map( x => x['Ordered Units - MFG'] ? x['Ordered Units - MFG'] : 0)
+
+		}
+		if(vendor) {
+			// console.log({field, currency, vendor})
+			val1 = dataset.map( x => x['Units Ordered'] ? x['Units Ordered'] : 0)
+			val2 = dataset.map( x => x['Ordered Units - MFG'] ? x['Shipped Units - SRC'] : 0)
+		}
+
+		
+		
+		val1 = val1.reduce((partialSum, a) => partialSum + a, 0)
+		val2 = val2.reduce((partialSum, a) => partialSum + a, 0)
+
+		// console.log({field,val1, val2, sum: val1+ val2, week})
+
+		return val1+val2
+	}
+
+
+
+
+	if(field == 'sales') {
+
+		let val1 = 0, val2 = 0
+
+		if(!currency && !vendor) {
+			val1 = dataset.map( x => x['Foreign - Ordered Product Sales (OPS)'] ? x['Foreign - Ordered Product Sales (OPS)'] : 0)
+			val2 = dataset.map( x => x['Foreign - Ordered Revenue - MFG'] ? x['Foreign - Ordered Revenue - MFG'] : 0)
+
+		}
+
+		if(currency && !vendor) {
+
+			val1 = dataset.map( x => x['Foreign - Ordered Product Sales (OPS)'] ? x['Foreign - Ordered Product Sales (OPS)'] : 0)
+			val2 = dataset.map( x => x['Foreign - Shipped COGS - SRC'] ? x['Foreign - Shipped COGS - SRC'] : 0)
+		}
+
+		if(currency && vendor) {
+			val1 = dataset.map( x => x['Ordered Product Sales (OPS)'] ? x['Ordered Product Sales (OPS)'] : 0)
+			val2 = dataset.map( x => x['Ordered Revenue - MFG'] ? x['Ordered Revenue - MFG'] : 0)
+
+		}
+
+		if(!currency && vendor) {
+			val1 = dataset.map( x => x['Ordered Product Sales (OPS)'] ? x['Ordered Product Sales (OPS)'] : 0)
+			val2 = dataset.map( x => x['Shipped COGS - SRC'] ? x['Shipped COGS - SRC'] : 0)
+
+		}
+
+		val1 = val1.reduce((partialSum, a) => partialSum + a, 0)
+		val2 = val2.reduce((partialSum, a) => partialSum + a, 0)
+
+
+		// console.log({field,val1, val2, sum: val1+ val2})
+		return val1 + val2
+
+	}
+
+	if(field == 'sessions') {
+
+
+		let val1 = dataset.map( x => x['Sessions'] ? x['Sessions'] : 0),
+			val2 = dataset.map( x => x['Glance Views'] ? x['Glance Views'] : 0)
+
+			val1 = val1.reduce((partialSum, a) => partialSum + a, 0)
+			val2 = val2.reduce((partialSum, a) => partialSum + a, 0)
+
+			// console.log({field,val1, val2, sum: val1+ val2})
+			return val1+val2	
+
+
+	}
+
+	if(field == 'cvr') {
+
+		let dividen = {
+			val1: 0, val2: 0, sum: 0
+		}
+		let divisor = {
+			val1: 0, val2: 0, sum: 0
+		}
+
+		dividen.val1 = dataset.map( x => x['Units Ordered'] ? x['Units Ordered'] : 0)
+		dividen.val2 = dataset.map( x => x['Ordered Units - MFG'] ? x['Ordered Units - MFG'] : 0)
+
+		divisor.val1 = dataset.map( x => x['Sessions'] ? x['Sessions'] : 0)
+		divisor.val2 = dataset.map( x => x['Glance Views'] ? x['Glance Views'] : 0)
+
+		dividen.val1 = dividen.val1.reduce((partialSum, a) => partialSum + a, 0)
+		dividen.val2 = dividen.val2.reduce((partialSum, a) => partialSum + a, 0)
+
+		divisor.val1 = divisor.val1.reduce((partialSum, a) => partialSum + a, 0)
+		divisor.val2 = divisor.val2.reduce((partialSum, a) => partialSum + a, 0)
+
+		dividen.sum = dividen.val1 + dividen.val2
+		divisor.sum = divisor.val1 + divisor.val2	
+
+		// return `${dividen.sum} / ${divisor.sum}`
+		// console.log({field, dividen, divisor, product: dividen.sum/divisor.sum})
+		return isFinite(dividen.sum/divisor.sum) ? (dividen.sum/divisor.sum) : ""
+
+
+
+	}
+
+	
+
+
+}
+
 const grandTotal = (field, data) => {
-  if (field == 'units') {}
-  if (field == 'sales') {}
-  if (field == 'sessions') {}
-  if (field == 'cvr') {}
-};
-const AppContext = React.createContext();
-const AppContextProvider = ({
-  children
-}) => {
-  const {
-    useState,
-    useEffect
-  } = React;
-  const [test] = useState('test');
-  const [env, setEnv] = useState(null);
-  const [clients, setClients] = useState([]);
-  const [clientsLoaded, setClientsLoaded] = useState(false);
-  const [data, setData] = useState([]);
-  const [dataHistory, setDataHistory] = useState([]);
-  const [weekDates, setWeekDates] = useState([]);
-  const [currency, setCurrency] = useState(false); //false == local, true == usd
-  const [vendor, setVendor] = useState(false); // false == ordered, true == shipped
 
-  const [pages, setPages] = useState(null);
-  const [pageNow, setPageNow] = useState(1);
-  const [table, setTable] = useState(null);
-  const [resetTable, setResetTable] = useState(false);
-  const numberWithCommas = x => {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  };
-  useEffect(() => {
-    let weeks = 52;
-    let day1 = moment().format("YYYY-01-01");
-    let weekList = [day1];
-    // console.log({day1})
-    setWeekDates([day1]);
-    for (let i = 0; i < weeks; i++) {
-      weekList.push(moment(day1, 'YYYY-MM-DD').add(i + 1, 'weeks').format('YYYY-MM-DD'));
-      setWeekDates(weekList);
+	if(field == 'units') {
+
+	}
+
+	if(field == 'sales') {
+
+	}
+
+	if(field == 'sessions'){
+
+	}
+
+	if(field == 'cvr') {
+
+	}
+
+}
+const AppContext = React.createContext()
+
+const AppContextProvider = ({children}) => {
+
+	const {useState, useEffect} = React
+
+	const [test] = useState('test')
+	const [env, setEnv] = useState(null)
+
+	const [clients, setClients]  = useState([])
+	const [clientsLoaded, setClientsLoaded] = useState(false)
+
+	const [data, setData] = useState([])
+	const [dataHistory, setDataHistory] = useState([])
+	const [weekDates, setWeekDates] = useState([])
+
+	const [currency, setCurrency] = useState(false)//false == local, true == usd
+	const [vendor, setVendor] = useState(false)// false == ordered, true == shipped
+
+	const [pages, setPages] = useState(null)
+	const [pageNow, setPageNow] = useState(1)
+
+	const [table, setTable] = useState(null)
+
+	const [resetTable, setResetTable] = useState(false)
+
+	const numberWithCommas = (x) => {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
-    // console.log(weekList)
-  }, []);
-  return /*#__PURE__*/React.createElement(AppContext.Provider, {
-    value: {
-      test,
-      clients,
-      setClients,
-      env,
-      setEnv,
-      data,
-      setData,
-      weekDates,
-      setWeekDates,
-      currency,
-      setCurrency,
-      vendor,
-      setVendor,
-      numberWithCommas,
-      pages,
-      setPages,
-      pageNow,
-      setPageNow,
-      table,
-      setTable,
-      resetTable,
-      setResetTable,
-      dataHistory,
-      setDataHistory,
-      clientsLoaded,
-      setClientsLoaded
-    }
-  }, children);
-};
+
+	useEffect(() => {
+		let weeks = 52
+		let day1 = moment().format("YYYY-01-01")
+		let weekList = [day1]
+		// console.log({day1})
+		setWeekDates([day1])
+		for(let i =0; i< weeks; i++) {
+			
+			weekList.push(moment(day1, 'YYYY-MM-DD').add(i+1, 'weeks').format('YYYY-MM-DD'))
+			setWeekDates(weekList)
+		}
+		// console.log(weekList)
+	},[])
+
+	return (
+		<AppContext.Provider value={{
+			test,
+			clients, setClients	,
+			env, setEnv,
+			data, setData,
+			weekDates, setWeekDates,
+			currency, setCurrency,
+			vendor, setVendor,
+			numberWithCommas,
+			pages, setPages,
+			pageNow, setPageNow,
+			table, setTable,
+			resetTable, setResetTable,
+			dataHistory, setDataHistory,
+			clientsLoaded, setClientsLoaded
+		}} >
+			{children}
+		</AppContext.Provider>
+	)
+}
 const Tabulated = () => {
-  const {
-    useState,
-    useEffect,
-    useContext
-  } = React;
-  const context = useContext(AppContext);
-  const {
-    env,
-    data,
-    setData,
-    weekDates,
-    vendor,
-    currency,
-    numberWithCommas,
-    table,
-    setTable,
-    clients,
-    setClients,
-    setResetTable,
-    resetTable,
-    clientsLoaded,
-    setClientsLoaded
-  } = context;
-  const [tableData, setTableData] = useState([]);
-  const [currentPage, setCurrentPage] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [scrollPosition, setScrollPosition] = useState(0);
-  const [noMoreData, setNoMoreData] = useState(false);
-  let scroll = 0;
-  let load = false;
-  let page = 1;
-  let listLimit = 20;
-  let tableDataLocal = [];
-  const createTableCols = () => {
-    let initTable = new Tabulator('#table', {
-      height: '80vh',
-      reactiveData: true,
-      data: tableDataLocal,
-      groupBy: "childasin",
-      placeholder: "Loading...",
-      groupHeader: function (value, count, data, group) {
-        let title = data.filter(x => x.asin != "")[0];
-        return title.asin;
-      },
-      rowFormatter: row => {
-        // console.log({row})
-      },
-      selectableRows: false,
-      columns: [
-      // {title: "ASIN Description", field: "asin", frozen: true, width: 180, formatter: 'html', headerSort: false	},
-      // {title: "(Child) ASIN", field: "childasin", frozen: true, headerSort: false},
-      {
-        title: "Values",
-        field: "values",
-        frozen: true,
-        headerSort: false
-      }, ...(() => {
-        let weeksArr = [];
-        weekDates.forEach(x => {
-          if (!moment(x).isSameOrAfter(new Date())) {
-            weeksArr.push({
-              title: x,
-              field: x,
-              headerSort: false
-            });
-          }
-        });
-        return weeksArr;
-      })(), {
-        title: "Grand Total",
-        field: "total"
-      }]
-    });
-    // console.log({createTableCols:initTable })
-    // initTable.hideColumn("childasin") 
-    // initTable.hideColumn("asin") 
-    setTable(initTable);
-  };
-  const createTableData = () => {
-    let tableRowArr = [];
-    let valueFormatter = (value, field) => {
-      // return value
-      if (["", null, undefined, 0, NaN, Infinity].includes(value)) return "";
-      let fix = ['sessions', 'units'].includes(field) ? 0 : 1;
-      let displayValue = isFinite(value) ? field == 'cvr' ? (value * 100).toFixed(fix) : value.toFixed(fix) : 0;
-      return `${field == 'sales' ? '$' : ''}${numberWithCommas(displayValue)}${['cvr', 'cvr_total'].includes(field) ? '%' : ''}`;
-    };
-    let weekRows = (field, dataset, formatted) => {
-      let weeksArr = {};
-      total = 0;
-      for (let x in weekDates) {
-        let value = valueCalculator(field, dataset, weekDates[x], context);
-        let valueFormatted = valueFormatter(value, field);
-        weeksArr[weekDates[x]] = formatted ? valueFormatted : value;
-        total = total + value;
-      }
-      return {
-        ...weeksArr,
-        total: ['cvr', ''].includes(field) ? "" : formatted ? valueFormatter(total, field) : total
-      };
-    };
 
-    // data.forEach( x => {
-    let newData = data.filter(x => x.length > 0);
-    for (let x in newData) {
-      // console.log({dataX: x})
-      let units = weekRows('units', newData[x], false),
-        unitsFormatted = weekRows('units', newData[x], true);
-      let sales = weekRows('sales', newData[x], false),
-        salesFormatted = weekRows('sales', newData[x], true);
-      let sessions = weekRows('sessions', newData[x], false),
-        sessionsFormatted = weekRows('sessions', newData[x], true);
-      let cvr = weekRows('cvr', newData[x], false),
-        cvrFormatted = weekRows('cvr', newData[x], true);
-      let asinHTML = () => `
+	const {useState, useEffect, useContext} = React
+	const context = useContext(AppContext)
+	const {
+		env, 
+		data, 
+		setData, 
+		weekDates, 
+		vendor, 
+		currency, 
+		numberWithCommas, 
+		table, 
+		setTable, 
+		clients,
+		setClients,  
+		setResetTable, 
+		resetTable,
+		clientsLoaded, 
+		setClientsLoaded
+	} = context
+
+
+	const [tableData, setTableData] = useState([])
+	const [currentPage, setCurrentPage] = useState(null)
+	const [loading, setLoading] = useState(false)
+	const [scrollPosition, setScrollPosition] = useState(0)
+	const [noMoreData, setNoMoreData] = useState(false)
+	let scroll = 0
+	let load = false
+	let page = 1
+	let listLimit = 20
+
+	let tableDataLocal = []
+
+	const createTableCols = () => {
+
+		let initTable = new Tabulator('#table', {
+			height: '80vh',
+			reactiveData: true,
+			data: tableDataLocal,
+			groupBy: "childasin" ,
+			 placeholder:"Loading...",
+			 groupHeader:function(value, count, data, group) {
+			
+			 	let title = data.filter( x => x.asin != "")[0];
+			 	return title.asin ;
+
+			 },
+			 rowFormatter: (row) => {
+
+			 	// console.log({row: row.getElement()})
+
+			 },
+			 selectableRows:false,
+			columns: [
+				// {title: "ASIN Description", field: "asin", frozen: true, width: 180, formatter: 'html', headerSort: false	},
+				// {title: "(Child) ASIN", field: "childasin", frozen: true, headerSort: false},
+				{title: "Values", field: "values", frozen: true,  headerSort: false, formatter: (cell) => {
+					cell.getElement().classList.add("fw-bold")
+					return cell.getValue()
+				}},
+				
+				...(() => {
+					let weeksArr = []
+
+					weekDates.forEach( x => {
+						if(!moment(x).isSameOrAfter(new Date())) {
+							weeksArr.push({title: x, field: x, headerSort: false	})
+						}
+						
+					})
+
+					return weeksArr
+				})(),
+				{title: "Grand Total", field: "total",  },
+
+				],
+		
+		})
+		// console.log({createTableCols:initTable })
+		// initTable.hideColumn("childasin") 
+		// initTable.hideColumn("asin") 
+		setTable(initTable)
+		
+	}
+
+	const createTableData = () => {
+		let tableRowArr = [];
+		let valueFormatter = (value, field) => {
+			// return value
+			if (["", null, undefined, 0, NaN, Infinity].includes(value)) return "";
+			let fix = ['sessions', 'units'].includes(field) ? 0 : 1;
+			let displayValue = isFinite(value) ? field == 'cvr' ? (value * 100).toFixed(fix) : value.toFixed(fix) : 0;
+			return `${field == 'sales' ? '$' : ''}${numberWithCommas(displayValue)}${['cvr', 'cvr_total'].includes(field) ? '%' : ''}`;
+		};
+
+
+
+		let weekRows = (field, dataset, formatted) => {
+
+
+			let weeksArr = {};
+			total = 0;
+			for (let x in weekDates) {
+				let value = valueCalculator(field, dataset, weekDates[x], context);
+				let valueFormatted = valueFormatter(value, field);
+
+				weeksArr[weekDates[x]] = formatted ? valueFormatted : value;
+				total = total + value;
+			}
+
+
+			return {
+				...weeksArr,
+				total: ['cvr', ''].includes(field) ? "" : formatted ? valueFormatter(total, field) : total
+			};
+		
+		};
+
+		// data.forEach( x => {
+		let newData = data.filter(x => x.length > 0);
+		for (let x in newData) {
+			// console.log({dataX: x})
+			let units = weekRows('units', newData[x], false),
+			unitsFormatted = weekRows('units', newData[x], true);
+			let sales = weekRows('sales', newData[x], false),
+			salesFormatted = weekRows('sales', newData[x], true);
+			let sessions = weekRows('sessions', newData[x], false),
+			sessionsFormatted = weekRows('sessions', newData[x], true);
+			let cvr = weekRows('cvr', newData[x], false),
+			cvrFormatted = weekRows('cvr', newData[x], true);
+
+			let asinHTML = () => `
 				<div class="text-truncate fw-bold text-wrap"  title="${newData[x][0]['Product Name']}">
 					${newData[x][0]['(Child) ASIN']} &bull; ${newData[x][0]['Product Name'] || `...`}  
 				</div>`;
-      let tableRow = [{
-        asin: asinHTML(0),
-        // values: "",
-        // ...weekRows('', null)
-        childasin: newData[x][0]['(Child) ASIN'],
-        values: "Units",
-        ...unitsFormatted
-      }, {
-        asin: null,
-        childasin: newData[x][0]['(Child) ASIN'],
-        values: "Sales",
-        ...sales
-      }, {
-        asin: null,
-        childasin: newData[x][0]['(Child) ASIN'],
-        values: "Sessions",
-        ...sessionsFormatted
-      }, {
-        asin: null,
-        childasin: newData[x][0]['(Child) ASIN'],
-        values: "CVR",
-        ...cvrFormatted,
-        total: (() => {
-          let show = isFinite(sessions.total / units.total);
-          let res = valueFormatter(sessions.total / units.total, 'cvr_total');
-          // let res =  sessions.total/units.total
-          if (!show) return "";
-          return res;
-        })()
-      }];
 
-      // tableRowArr = [...tableRowArr, ...tableRow]
-      tableRowArr.push(tableRow);
+			let tableRow = [{
+					asin: asinHTML(0),
+					// values: "",
+					// ...weekRows('', null)
+					childasin: newData[x][0]['(Child) ASIN'],
+					values: "Units",
+					...unitsFormatted
+				}, 
 
-      // })
-    }
-    let newTable = [];
-    let salesIndex = 1;
-    // console.log({tableRowArr})
-    tableRowArr.sort((a, b) => b[salesIndex].total - a[salesIndex].total);
-    tableRowArr.forEach(x => {
-      // x[2].total = valueFormatter(x[2].total, 'sales')
+				{
+					asin: null	,
+					childasin: newData[x][0]['(Child) ASIN'],
+					values: "Sales",
+					...sales
+				}, {
+					asin: null,
+					childasin: newData[x][0]['(Child) ASIN'],
+					values: "Sessions",
+					...sessionsFormatted
+				}, {
+					asin: null,
+					childasin: newData[x][0]['(Child) ASIN'],
+					values: "CVR",
+					...cvrFormatted,
+					total: (() => {
+					let show = isFinite(sessions.total / units.total);
+					let res = valueFormatter(sessions.total / units.total, 'cvr_total');
+					// let res =  sessions.total/units.total
+					if (!show) return "";
+					return res;
+				})()
+			}];
 
-      Object.keys(x[salesIndex]).forEach(xx => {
-        let valid = isFinite(x[salesIndex][xx]);
-        x[salesIndex][xx] = !isFinite(x[salesIndex][xx]) ? x[salesIndex][xx] : valid ? valueFormatter(x[salesIndex][xx], 'sales') : 0;
-      });
-      newTable = [...newTable, ...x];
-    });
-    tableRowArr = newTable;
-    return tableRowArr;
-  };
-  const createTableRows = () => {
-    console.log("creating table rows");
-    let newTableData = tableData;
-    newTableData = [...newTableData, ...createTableData()];
-    console.log({
-      newTableData
-    });
-    setTableData(newTableData);
-  };
-  const setCurrentPageHandler = () => {
-    console.log("setting current page");
-    page = currentPage + 1;
-    setCurrentPage(page);
-    // console.log({page})
-  };
-  const addData = /*#__PURE__*/function () {
-    var _ref6 = _asyncToGenerator(function* () {
-      console.log("adding data");
-      // console.log(table)
-      let from = listLimit * currentPage - listLimit,
-        to = listLimit * currentPage;
-      let pageList = clients.slice(from, to);
-      console.log({
-        pageList,
-        clients,
-        currentPage,
-        from,
-        to
-      });
-      if (clients.length < to) {
-        console.log("client list length is less than next page count");
-        setNoMoreData(true);
-      }
-      try {
-        let newData = yield DOMO.getYearData(pageList);
-        let newDataList = pageList.map(x => newData.filter(xx => xx['Product ID'] == x));
-        newDataList = newDataList.filter(x => x.length > 0);
-        console.log({
-          newDataList
-        });
-        setData(newDataList);
-      } catch (err) {
-        console.log({
-          err
-        });
-        // setData([])
-      } finally {
-        setLoading(false);
-        load = false;
-      }
-    });
-    return function addData() {
-      return _ref6.apply(this, arguments);
-    };
-  }();
-  const triggerLoadData = top => {
-    let offsetHeight = document.querySelector(".tabulator-table").offsetHeight;
-    let trigger = offsetHeight * .75;
-    // console.log({top, trigger, loadData: top  > trigger, loading })
-    if (top > trigger && !loading) {
-      setScrollPosition(top - 100);
-      load = true;
-      setLoading(true);
-    }
-  };
-  const resetTableHandler = () => {
-    console.log("reseting table data");
-    setNoMoreData(false);
-    if (!clientsLoaded) setClients([]);
-    setData([]);
-    setTableData([]);
-    setCurrentPage(null);
-    setScrollPosition(0);
-    setResetTable(false);
-    table.clearData();
-  };
-  const getClientList = /*#__PURE__*/function () {
-    var _ref7 = _asyncToGenerator(function* () {
-      console.log('getClientList');
-      let list = yield DOMO.getClientTitles();
-      console.log({
-        getClientList: list
-      });
-      setClients(list);
-      setClientsLoaded(true);
-      return;
-    });
-    return function getClientList() {
-      return _ref7.apply(this, arguments);
-    };
-  }();
-  useEffect(() => {
-    console.log({
-      dataLoaded: data
-    });
-    if (data.length >= listLimit && weekDates.length > 0) {
-      // console.log({data})
-      createTableRows();
-      // console.log("create table rows")
-    }
-    if (noMoreData) createTableRows();
-    if (data.length < listLimit && !noMoreData) {
-      console.log("list less than limit, loading more");
-      console.log({
-        dataLength: data.length
-      });
-      setCurrentPageHandler();
-    }
-  }, [data]);
-  useEffect(() => {
-    if (weekDates.length > 0) {
-      console.log("create table columns");
-      createTableCols();
-    }
-  }, [weekDates]);
-  useEffect(() => {
-    // let el = document.querySelector(".tabulator-tableholder")
-    if (tableData.length > 0) {
-      console.log('table data updated');
-      console.log({
-        tableData
-      });
-      tableDataLocal = tableData;
-      // console.log({tableDataLocal})
-      table.setData(tableDataLocal);
-      if (currentPage > 1) document.querySelector(".tabulator-tableholder").scrollTop = scrollPosition;
-      // el.scrollTo(0, scroll)
-    }
-  }, [tableData]);
-  useEffect(() => {
-    // console.log({currency, vendor})
+			// tableRowArr = [...tableRowArr, ...tableRow]
+			tableRowArr.push(tableRow);
 
-    if (env && table) {
-      resetTableHandler();
+			// })
+		}
+		let newTable = [];
+		let salesIndex = 1
+		// console.log({tableRowArr})
+		tableRowArr.sort((a, b) => b[salesIndex].total - a[salesIndex].total);
+		tableRowArr.forEach(x => {
+		// x[2].total = valueFormatter(x[2].total, 'sales')
 
-      // createTableRows ();
-    }
-  }, [currency, vendor]);
-  useEffect(() => {
-    if (table) {
-      console.log("table created");
-      let addColumn = [{
-        title: "ASIN Description",
-        field: "asin",
-        frozen: true,
-        width: 180,
-        formatter: 'html',
-        headerSort: false
-      }, {
-        title: "(Child) ASIN",
-        field: "childasin",
-        frozen: true,
-        headerSort: false
-      }];
-      Promise.all([table.addColumn(addColumn[0], true, "values"), table.addColumn(addColumn[1], true, "values")]).then(resp => {
-        console.log("deleting columns");
-        table.hideColumn("childasin");
-        table.hideColumn("asin");
-      });
-      // addColumn.forEach( x => table.addColumn(x,true,"values"));
 
-      table.on("scrollVertical", function (top) {
-        //top - the current vertical scroll position
+		Object.keys(x[salesIndex]).forEach(xx => {
+			let valid = isFinite(x[salesIndex][xx]);
+			x[salesIndex][xx] = !isFinite(x[salesIndex][xx]) ? x[salesIndex][xx] : valid ? valueFormatter(x[salesIndex][xx], 'sales') : 0;
+		});
+		newTable = [...newTable, ...x];
+		});
+		tableRowArr = newTable;
 
-        let offsetHeight = document.querySelector(".tabulator-table").offsetHeight;
-        let clientHeight = document.querySelector(".tabulator-table").clientHeight;
-        let scrollHeight = document.querySelector(".tabulator-table").scrollHeight;
-        // let scrollTop = document.querySelector(".tabulator-tableholder").scrollHeight
-        let trigger = clientHeight * .75;
-        // console.log({top, trigger, loading, condition: top  > trigger && !loading})
-        // triggerLoadData(top, trigger)
-        triggerLoadData(top);
-      });
-    }
-  }, [table]);
-  useEffect(() => {
-    if (clients.length > 0) addData();
-  }, [clients]);
-  useEffect(() => {
-    console.log({
-      currentPage
-    });
-    if (currentPage == null) setCurrentPage(1);
-    if (env && currentPage != null && table) {
-      if (!clientsLoaded) getClientList();else addData();
-      // 
-    }
-  }, [currentPage]);
-  useEffect(() => {
-    console.log({
-      loading
-    });
-    load = loading;
-    if (loading) {
-      console.log("trigger load data");
-      setCurrentPageHandler();
-    }
-  }, [loading]);
-  useEffect(() => {
-    // console.log({context})
-    scroll = scrollPosition;
-  }, [scrollPosition]);
-  useEffect(() => {
-    if (resetTable) {
-      resetTableHandler();
-    }
-  }, [resetTable]);
-  useEffect(() => {
-    console.log({
-      noMoreData
-    });
-    // if(noMoreData) createTableRows()
-  }, [noMoreData]);
-  useEffect(() => {
-    console.log({
-      clientsLoaded
-    });
-  }, [clientsLoaded]);
-  return /*#__PURE__*/React.createElement("div", {
-    id: "table",
-    className: "my-1 border border-secondary"
-  });
-};
+
+
+		return tableRowArr
+	}
+
+	const createTableRows = () => {
+		console.log("creating table rows")
+   		// let newTableData = tableData
+   		// let addition = createTableData()
+   		let newtableData = createTableData()
+   		// // newTableData = [ ...newTableData, ...createTableData()]
+
+   		// newTableData = tableData.concat(addition)
+
+   		console.log({newtableData})
+	   	// setTableData(newTableData);
+   		setTableData(newtableData);
+
+	  };
+
+  	const setCurrentPageHandler = () => {
+  		console.log("setting current page")
+  		
+  		page = currentPage + 1
+  		setCurrentPage(page)
+  		// console.log({page})
+  	}
+
+  	const addData = async  () => { 
+  		
+		console.log("adding data")
+		// console.log(table)
+		let from = (listLimit * currentPage) - listLimit, to = listLimit * currentPage;
+	
+		let pageList = clients.slice(from, to)
+		
+		console.log({pageList, clients,currentPage, from , to})
+
+		if(clients.length < to) {
+			console.log("client list length is less than next page count")
+			setNoMoreData(true)	
+		}
+
+		try {
+			let newData = await DOMO.getYearData(pageList)
+			let newDataList = pageList.map( x => newData.filter( xx => xx['Product ID'] == x))
+
+			newDataList = newDataList.filter( x => x.length > 0)
+			// console.log({newDataList})
+			let totalData = data.concat(newDataList)
+			// totalData = tableData.filter((x, i, arr) => arr.findIndex(xx => (xx["Product ID"] == x["Product ID"]) == i))
+			console.log({uniqeDatas: totalData})
+			setData(totalData)
+
+		} catch (err) {
+			console.log({err})
+			// setData([])
+		}finally{
+			setLoading(false)
+			load = false
+
+		}
+
+	}
+
+
+	const triggerLoadData = (top) => {
+		let offsetHeight = document.querySelector(".tabulator-table").offsetHeight	
+		let trigger = offsetHeight * .75;
+		// console.log({top, trigger, loadData: top  > trigger, loading })
+		if(top  > trigger && !loading) {		
+			
+			setScrollPosition(top - 100)
+			load = true
+			setLoading(true)	
+			
+		}
+	}
+
+	const resetTableHandler = () => {
+		console.log("reseting table data")
+		setNoMoreData(false)
+		
+		if(!clientsLoaded) setClients([])
+		setData([])
+		setTableData([])
+		setCurrentPage(null)
+		setScrollPosition(0)
+		setResetTable(false)
+		table.clearData()
+	}
+
+	const getClientList = async () => {
+		console.log('getClientList')
+		let list = await DOMO.getClientTitles()
+		console.log({getClientList: list})
+		setClients(list)
+		setClientsLoaded(true)	
+
+		return
+
+	}
+
+	useEffect(() => {
+		console.log({dataLoaded: data, tableData})
+		
+		if(data.length >= listLimit && weekDates.length > 0) {
+			// console.log({data})
+			createTableRows ()
+			// console.log("create table rows")
+			
+		}
+
+		if(noMoreData) createTableRows ()
+
+		if(data.length < listLimit && !noMoreData) {
+			console.log("list less than limit, loading more")
+			console.log({dataLength: data.length})
+			// setTableData(data)
+			setCurrentPageHandler() 
+		}
+
+	}, [data])
+
+
+	useEffect(() => {
+		
+		if(weekDates.length > 0) {
+			console.log("create table columns")
+			createTableCols()
+		;}
+	
+	}, [weekDates])
+
+	useEffect(() => {
+		
+		// let el = document.querySelector(".tabulator-tableholder")
+		if(tableData.length > 0) {
+			console.log('table data updated')
+			console.log({tableData})
+			tableDataLocal = tableData
+			// console.log({tableDataLocal})
+			table.setData(tableDataLocal);
+			if(currentPage > 1) document.querySelector(".tabulator-tableholder").scrollTop = scrollPosition
+			// el.scrollTo(0, scroll)
+			
+		} 
+	}, [tableData])
+	useEffect(() => {
+		// console.log({currency, vendor})
+		
+		if(env && table) {
+
+			resetTableHandler ()
+
+			// createTableRows ();
+		} 
+
+
+	}, [currency, vendor])
+
+	useEffect(() => {
+
+
+		
+		if(table){
+	 
+			
+
+			console.log("table created")
+
+			let addColumn = [
+				{title: "ASIN Description", field: "asin", frozen: true, width: 180, formatter: 'html', headerSort: false	},
+				{title: "(Child) ASIN", field: "childasin", frozen: true, headerSort: false},
+				];
+			Promise.all([
+				table.addColumn(addColumn[0], true, "values"),
+				table.addColumn(addColumn[1], true, "values")
+			]).then(resp => {
+				console.log("deleting columns")
+				table.hideColumn("childasin") 
+				table.hideColumn("asin") 
+			})
+			// addColumn.forEach( x => table.addColumn(x,true,"values"));
+
+
+
+			table.on("scrollVertical", function(top){
+			        //top - the current vertical scroll position
+				
+				let offsetHeight = document.querySelector(".tabulator-table").offsetHeight	
+				let clientHeight = document.querySelector(".tabulator-table").clientHeight	
+				let scrollHeight = document.querySelector(".tabulator-table").scrollHeight
+				// let scrollTop = document.querySelector(".tabulator-tableholder").scrollHeight
+				let trigger = (clientHeight) * .75
+				// console.log({top, trigger, loading, condition: top  > trigger && !loading})
+				// triggerLoadData(top, trigger)
+				triggerLoadData(top)
+				
+			});
+		}
+	}, [table])
+
+	useEffect(() => {
+		if(clients.length > 0) addData();
+		
+	}, [clients])
+
+	useEffect( () => {
+		console.log({currentPage})
+		
+		if(currentPage == null) setCurrentPage(1)
+		if(env && currentPage != null && table) {
+
+			if(!clientsLoaded) getClientList();
+			else addData();	
+			// 
+		}
+	}, [currentPage])
+
+	useEffect( () => {
+		console.log({loading})
+		load = loading
+
+		if(loading) {
+			console.log("trigger load data")
+			setCurrentPageHandler()
+		} 
+	}, [loading])
+	useEffect( () => {
+		// console.log({context})
+		scroll = scrollPosition
+	}, [scrollPosition])	
+
+	useEffect(() => {
+		if(resetTable) {
+			resetTableHandler()	
+		}
+	}, [resetTable])
+
+	useEffect(() => {
+		console.log({noMoreData})
+		// if(noMoreData) createTableRows()
+	}, [noMoreData])
+
+	useEffect(() => {
+		console.log({clientsLoaded})
+	}, [clientsLoaded])
+
+
+	return (
+		<div id="table" className="my-1 border border-secondary"></div>
+
+	)
+}
 const Filters = () => {
-  const {
-    useState,
-    useEffect,
-    useContext
-  } = React;
-  const {
-    currency,
-    setCurrency,
-    vendor,
-    setVendor
-  } = useContext(AppContext);
-  useEffect(() => {
-    // console.log({currency})
-  }, [currency]);
-  useEffect(() => {
-    // console.log({vendor})
-  }, [vendor]);
-  return /*#__PURE__*/React.createElement("div", {
-    class: "container-fluid"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "row "
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "col-sm-12 col-md-6 col-lg-4 p-0"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card m-1 text-bg-light"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card-body  p-1 mx-1",
-    style: {
-      minHeight: 70
-    }
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "fw-bold mb-1"
-  }, "USD / Local Currency Selector"), /*#__PURE__*/React.createElement("select", {
-    onChange: e => setCurrency(e.target.value == 'usd' ? true : false),
-    class: "form-select form-select-sm",
-    defaultValue: currency ? 'usd' : 'local'
-  }, /*#__PURE__*/React.createElement("option", {
-    selected: true,
-    value: "usd"
-  }, "USD Converted"), /*#__PURE__*/React.createElement("option", {
-    value: "local"
-  }, "Marketplace Local Currency"))))), /*#__PURE__*/React.createElement("div", {
-    className: "col-sm-12 col-md-6 col-lg-4  p-0"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card m-1 text-bg-light"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "card-body  p-1 mx-1",
-    style: {
-      minHeight: 70
-    }
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "fw-bold mb-1"
-  }, "Vendor OPS Model "), /*#__PURE__*/React.createElement("div", {
-    class: "form-check form-check-inline"
-  }, /*#__PURE__*/React.createElement("input", {
-    defaultChecked: vendor,
-    onChange: e => setVendor(true),
-    class: "form-check-input",
-    type: "radio",
-    name: "vendor",
-    id: "shipped",
-    value: "shipped"
-  }), /*#__PURE__*/React.createElement("label", {
-    class: "form-check-label",
-    for: "vendor"
-  }, "Shipped COGs")), /*#__PURE__*/React.createElement("div", {
-    class: "form-check form-check-inline"
-  }, /*#__PURE__*/React.createElement("input", {
-    defaultChecked: !vendor,
-    onChange: e => setVendor(false),
-    class: "form-check-input",
-    type: "radio",
-    name: "vendor",
-    id: "ordered",
-    value: "ordered"
-  }), /*#__PURE__*/React.createElement("label", {
-    class: "form-check-label",
-    for: "vendor"
-  }, "Order Revenue")))))));
-};
+
+	const { useState, useEffect, useContext} = React
+	const { currency, setCurrency, vendor, setVendor} = useContext(AppContext)
+
+
+	useEffect(() => {
+		// console.log({currency})
+	}, [currency])
+	useEffect(() => {
+		// console.log({vendor})
+	}, [vendor])
+
+	return (
+		<div class="container-fluid">
+			<div className="row ">
+
+				<div className="col-sm-12 col-md-6 col-lg-4 p-0">
+					<div className="card m-1 text-bg-light">
+					  <div className="card-body  p-1 mx-1"  style={{minHeight: 70}}>
+					    <p className="fw-bold mb-1">USD / Local Currency Selector</p>
+					    <select 
+					    onChange={(e) => setCurrency(e.target.value == 'usd' ? true:false)}
+					    class="form-select form-select-sm" 
+					    defaultValue={currency ? 'usd': 'local'}>
+							<option selected value="usd">USD Converted</option>
+							<option value="local">Marketplace Local Currency</option>
+							
+						</select>
+					  </div>
+					</div>
+				</div>
+				<div className="col-sm-12 col-md-6 col-lg-4  p-0">
+					<div className="card m-1 text-bg-light">
+					  <div className="card-body  p-1 mx-1" style={{minHeight: 70}}>
+					    <p className="fw-bold mb-1">Vendor OPS Model	</p>
+					    	<div class="form-check form-check-inline">
+								<input 
+								defaultChecked={vendor }
+								onChange={e => setVendor( true ) }
+								class="form-check-input" type="radio" name="vendor" id="shipped" value="shipped"/>
+								<label class="form-check-label" for="vendor">Shipped COGs</label>
+							</div>
+							<div class="form-check form-check-inline">
+								<input 
+								defaultChecked={!vendor}
+								onChange={e => setVendor( false ) }
+								class="form-check-input" type="radio" name="vendor" id="ordered" value="ordered"/>
+								<label class="form-check-label" for="vendor">Order Revenue</label>
+							</div>
+							
+					  </div>
+					</div>
+				</div>
+
+				{/*<div className="col-sm-12 col-md-12 col-lg-4  p-0 ">
+					<div class="card m-1 text-bg-light">
+					  <div class="card-body  p-1 mx-1">
+					    This is some text within a card body.
+					  </div>
+					</div>
+				</div>*/}
+
+			</div>
+		</div>
+
+	)
+}
 const Pagination = () => {
-  const {
-    useState,
-    useEffect,
-    useContext
-  } = React;
-  const context = useContext(AppContext);
-  const {
-    setPageNow,
-    pageNow,
-    pages
-  } = context;
-  const setPageNowHandler = page => {
-    console.log({
-      page
-    });
-    setPageNow(page);
-  };
-  return /*#__PURE__*/React.createElement("ul", {
-    className: "pagination pagination-sm"
-  }, [...new Array(pages)].map((x, i) => /*#__PURE__*/React.createElement("li", {
-    onClick: e => setPageNowHandler(i + 1),
-    className: "page-item " + (pageNow == i + 1 ? 'active' : '')
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "page-link"
-  }, i + 1))));
-};
+
+	const {useState, useEffect, useContext} = React
+	const context = useContext(AppContext)
+	const { setPageNow, pageNow, pages} = context
+
+	const setPageNowHandler = (page) => {
+
+		console.log({page})
+
+		setPageNow(page)
+	}
+
+
+	return (
+		<ul className="pagination pagination-sm">
+			{[...new Array(pages)].map( (x, i) => (
+				<li 
+				onClick={e => setPageNowHandler(i + 1)}
+				className={"page-item " + (pageNow == (i + 1) ? 'active':'')}><span className="page-link">{i + 1}</span></li>
+			))
+
+			}
+		</ul>
+	)
+}
 const Index = () => {
-  const {
-    useState,
-    useEffect,
-    useContext
-  } = React;
-  const context = useContext(AppContext);
-  const {
-    env,
-    setEnv,
-    setData,
-    setResetTable,
-    setClientsLoaded
-  } = context;
-  const getEnv = /*#__PURE__*/function () {
-    var _ref8 = _asyncToGenerator(function* () {
-      let resp = yield DOMO.getEnv();
-      setEnv(resp);
-    });
-    return function getEnv() {
-      return _ref8.apply(this, arguments);
-    };
-  }();
-  const filterUpdates = () => {
-    console.log("filterUpdates");
-    setResetTable(true);
-  };
-  useEffect(() => {
-    console.clear();
-    DOMO.context = context;
-    getEnv();
-  }, []);
-  useEffect(() => {
-    console.log(env ? 'live' : 'not live');
-    if (env) {
-      DOMO.onFilterUpdate(setData, filterUpdates, setClientsLoaded);
-      setResetTable(true);
-    }
-  }, [env]);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "p-1"
-  }, /*#__PURE__*/React.createElement(Filters, null), /*#__PURE__*/React.createElement(Tabulated, null));
-};
-ReactDOM.createRoot(document.getElementById("app")).render(/*#__PURE__*/React.createElement(AppContextProvider, null, /*#__PURE__*/React.createElement(Index, null)));
+
+	const {useState, useEffect, useContext} = React
+	const context = useContext(AppContext)
+	const {
+		env, 
+		setEnv,
+		setData, 	
+		setResetTable,
+		setClientsLoaded
+	} = context
+
+	const getEnv = async () => {
+		let resp = await DOMO.getEnv()
+		setEnv(resp)
+	}
+
+	const filterUpdates = () => {
+		console.log("filterUpdates")
+		setResetTable(true)
+	}
+
+	
+
+	useEffect(() => {
+		console.clear()
+		DOMO.context = context
+		getEnv()
+	}, [])
+
+	
+	useEffect(() => {
+		console.log(env ? 'live':'not live')
+		if(env) {
+			DOMO.onFilterUpdate(setData, filterUpdates, setClientsLoaded)
+			
+			setResetTable(true)
+		}
+	}, [env])
+
+
+
+
+
+
+	
+
+	return (
+		<div className="p-1">
+			<Filters />
+			<Tabulated />
+		</div>
+	)	
+}
+
+ReactDOM.createRoot(document.getElementById("app")).render(
+	<AppContextProvider>
+		<Index />
+	</AppContextProvider>
+)

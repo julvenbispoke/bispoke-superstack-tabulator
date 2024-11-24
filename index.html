@@ -22,16 +22,16 @@
 <body>
 	<div id="app"></div>
 	<script type="text/javascript">
-		console.log(moment)
+		// console.log(moment)
 		let files = [
-		"domo_functions.js",
-     "value	_calculator.js",
-      "context.jsx",
+    "domo_functions.js",
+    "value_calculator.js",
+    "context.jsx",  
     "tabulated.jsx",
     "filters.jsx",
     "pagination.jsx",
 
-      "index.jsx"
+    "index.jsx",
       ]
     let loaded = []
     let promises = []
@@ -42,7 +42,7 @@
         promises.push( () => fetch(x) )
       })
 
-      let res = await Promise.all(promises.map( x => x()))
+      let res = await Promise.all(promises.map( x => x()));
 
       for( i in res) {
         let res2 = await res[i].text()
@@ -50,22 +50,26 @@
       }
       
 
-      const code =  Babel.transform(loaded.join(";\n"), {
-        presets: ['es2017', 'react']
-      }).code
+     
+
+      
 
       const formData = new FormData();
-      formData.append('code', code)
+      formData.append('files', JSON.stringify(files))
 
       let write = await fetch("write.php", {
         method: "POST",
         body: formData
       })
       write = await write.text()
+
+     const code =  Babel.transform(write, {
+        presets: ['es2017', 'react']
+      }).code
       // console.log({write})
       // return
 
-      new Function(write)()
+      new Function(code)()
 
       try{
            navigator.clipboard.writeText(code).then( () => console.log("code copied to clipboard"))

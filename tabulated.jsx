@@ -20,6 +20,7 @@ const Tabulated = () => {
 		setClientsLoaded
 	} = context
 
+
 	const [tableData, setTableData] = useState([])
 	const [currentPage, setCurrentPage] = useState(null)
 	const [loading, setLoading] = useState(false)
@@ -42,17 +43,23 @@ const Tabulated = () => {
 			 placeholder:"Loading...",
 			 groupHeader:function(value, count, data, group) {
 			
-			 	let title = data.filter( x => x.asin != "")[0]
-			 	return title.asin 
+			 	let title = data.filter( x => x.asin != "")[0];
+			 	return title.asin ;
+
 			 },
 			 rowFormatter: (row) => {
-			 	// console.log({row})
+
+			 	// console.log({row: row.getElement()})
+
 			 },
 			 selectableRows:false,
 			columns: [
 				// {title: "ASIN Description", field: "asin", frozen: true, width: 180, formatter: 'html', headerSort: false	},
 				// {title: "(Child) ASIN", field: "childasin", frozen: true, headerSort: false},
-				{title: "Values", field: "values", frozen: true,  headerSort: false	},
+				{title: "Values", field: "values", frozen: true,  headerSort: false, formatter: (cell) => {
+					cell.getElement().classList.add("fw-bold")
+					return cell.getValue()
+				}},
 				
 				...(() => {
 					let weeksArr = []
@@ -190,13 +197,16 @@ const Tabulated = () => {
 
 	const createTableRows = () => {
 		console.log("creating table rows")
-   		let newTableData = tableData
+   		// let newTableData = tableData
+   		// let addition = createTableData()
+   		let newtableData = createTableData()
+   		// // newTableData = [ ...newTableData, ...createTableData()]
 
-   		newTableData = [ ...newTableData, ...createTableData()]
+   		// newTableData = tableData.concat(addition)
 
-   		console.log({newTableData})
-	   	setTableData(newTableData);
-
+   		console.log({newtableData})
+	   	// setTableData(newTableData);
+   		setTableData(newtableData);
 
 	  };
 
@@ -228,9 +238,12 @@ const Tabulated = () => {
 			let newDataList = pageList.map( x => newData.filter( xx => xx['Product ID'] == x))
 
 			newDataList = newDataList.filter( x => x.length > 0)
-			console.log({newDataList})
-			
-			setData(newDataList)
+			// console.log({newDataList})
+			let totalData = data.concat(newDataList)
+			// totalData = tableData.filter((x, i, arr) => arr.findIndex(xx => (xx["Product ID"] == x["Product ID"]) == i))
+			console.log({uniqeDatas: totalData})
+			setData(totalData)
+
 		} catch (err) {
 			console.log({err})
 			// setData([])
@@ -274,14 +287,15 @@ const Tabulated = () => {
 		let list = await DOMO.getClientTitles()
 		console.log({getClientList: list})
 		setClients(list)
-		setClientsLoaded(true)
+		setClientsLoaded(true)	
 
 		return
 
 	}
 
 	useEffect(() => {
-		console.log({dataLoaded: data})
+		console.log({dataLoaded: data, tableData})
+		
 		if(data.length >= listLimit && weekDates.length > 0) {
 			// console.log({data})
 			createTableRows ()
@@ -294,7 +308,8 @@ const Tabulated = () => {
 		if(data.length < listLimit && !noMoreData) {
 			console.log("list less than limit, loading more")
 			console.log({dataLength: data.length})
-			setCurrentPageHandler()
+			// setTableData(data)
+			setCurrentPageHandler() 
 		}
 
 	}, [data])
