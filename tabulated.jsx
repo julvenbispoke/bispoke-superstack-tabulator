@@ -2,7 +2,23 @@ const Tabulated = () => {
 
 	const {useState, useEffect, useContext} = React
 	const context = useContext(AppContext)
-	const {env, data, setData, weekDates, vendor, currency, numberWithCommas, table, setTable, clients,setClients,  setResetTable, resetTable} = context
+	const {
+		env, 
+		data, 
+		setData, 
+		weekDates, 
+		vendor, 
+		currency, 
+		numberWithCommas, 
+		table, 
+		setTable, 
+		clients,
+		setClients,  
+		setResetTable, 
+		resetTable,
+		clientsLoaded, 
+		setClientsLoaded
+	} = context
 
 	const [tableData, setTableData] = useState([])
 	const [currentPage, setCurrentPage] = useState(null)
@@ -15,7 +31,6 @@ const Tabulated = () => {
 	let listLimit = 20
 
 	let tableDataLocal = []
-	
 
 	const createTableCols = () => {
 
@@ -26,15 +41,17 @@ const Tabulated = () => {
 			groupBy: "childasin" ,
 			 placeholder:"Loading...",
 			 groupHeader:function(value, count, data, group) {
-			 	// console.log({value, count, data, group})
-			 	// console.log(data.filter( x => x.asin != "")[0].asin)	
+			
 			 	let title = data.filter( x => x.asin != "")[0]
 			 	return title.asin 
 			 },
+			 rowFormatter: (row) => {
+			 	// console.log({row})
+			 },
 			 selectableRows:false,
 			columns: [
-				{title: "ASIN Description", field: "asin", frozen: true, width: 150, formatter: 'html', headerSort: false	},
-				{title: "(Child) ASIN", field: "childasin", frozen: true, headerSort: false},
+				// {title: "ASIN Description", field: "asin", frozen: true, width: 180, formatter: 'html', headerSort: false	},
+				// {title: "(Child) ASIN", field: "childasin", frozen: true, headerSort: false},
 				{title: "Values", field: "values", frozen: true,  headerSort: false	},
 				
 				...(() => {
@@ -55,6 +72,8 @@ const Tabulated = () => {
 		
 		})
 		// console.log({createTableCols:initTable })
+		// initTable.hideColumn("childasin") 
+		// initTable.hideColumn("asin") 
 		setTable(initTable)
 		
 	}
@@ -69,12 +88,10 @@ const Tabulated = () => {
 			return `${field == 'sales' ? '$' : ''}${numberWithCommas(displayValue)}${['cvr', 'cvr_total'].includes(field) ? '%' : ''}`;
 		};
 
-		// let valueFormatter = (cell, {field}, onRendered ) => {
-		// 	return field
-		// }
+
 
 		let weekRows = (field, dataset, formatted) => {
-			// console.log({weekRows: { field, client: dataset[0]['Client Title'], formatted}})
+
 
 			let weeksArr = {};
 			total = 0;
@@ -85,9 +102,7 @@ const Tabulated = () => {
 				weeksArr[weekDates[x]] = formatted ? valueFormatted : value;
 				total = total + value;
 			}
-			// if(fields == '') weeksArr['childasin'] = dataset[0]['(Child) ASIN']
-			// else weeksArr['childasin'] = ""
-			// console.log({childasin: dataset[0]['(Child) ASIN']})
+
 
 			return {
 				...weeksArr,
@@ -115,7 +130,7 @@ const Tabulated = () => {
 				</div>`;
 
 			let tableRow = [{
-				asin: asinHTML(),
+					asin: asinHTML(0),
 					// values: "",
 					// ...weekRows('', null)
 					childasin: newData[x][0]['(Child) ASIN'],
@@ -124,17 +139,17 @@ const Tabulated = () => {
 				}, 
 
 				{
-					asin: "",
+					asin: null	,
 					childasin: newData[x][0]['(Child) ASIN'],
 					values: "Sales",
 					...sales
 				}, {
-					asin: "",
+					asin: null,
 					childasin: newData[x][0]['(Child) ASIN'],
 					values: "Sessions",
 					...sessionsFormatted
 				}, {
-					asin: "",
+					asin: null,
 					childasin: newData[x][0]['(Child) ASIN'],
 					values: "CVR",
 					...cvrFormatted,
@@ -168,21 +183,17 @@ const Tabulated = () => {
 		});
 		tableRowArr = newTable;
 
-		// console.log({tableRowArr})
-		// tableDataLocal = tableRowArr
-		// setTableData(tableRowArr);
-		// table.setData(tableDataLocal);
+
 
 		return tableRowArr
 	}
 
 	const createTableRows = () => {
-
+		console.log("creating table rows")
    		let newTableData = tableData
-   		// console.log({newTableData1: newTableData})
-   		// newTableData = newTableData.concat(createTableData())
+
    		newTableData = [ ...newTableData, ...createTableData()]
-   		// console.log({newTableData2: newTableData})
+
    		console.log({newTableData})
 	   	setTableData(newTableData);
 
@@ -226,15 +237,9 @@ const Tabulated = () => {
 		}finally{
 			setLoading(false)
 			load = false
-			// console.log({scrollPosition})
-			
-			// console.log(table.getRows("all"))
-			// table.scrollTo("center")
-		}
-		
 
-		
-		
+		}
+
 	}
 
 
@@ -254,7 +259,8 @@ const Tabulated = () => {
 	const resetTableHandler = () => {
 		console.log("reseting table data")
 		setNoMoreData(false)
-		setClients([])
+		
+		if(!clientsLoaded) setClients([])
 		setData([])
 		setTableData([])
 		setCurrentPage(null)
@@ -268,7 +274,7 @@ const Tabulated = () => {
 		let list = await DOMO.getClientTitles()
 		console.log({getClientList: list})
 		setClients(list)
-	
+		setClientsLoaded(true)
 
 		return
 
@@ -279,9 +285,11 @@ const Tabulated = () => {
 		if(data.length >= listLimit && weekDates.length > 0) {
 			// console.log({data})
 			createTableRows ()
-			console.log("create table rows")
+			// console.log("create table rows")
 			
-		} 
+		}
+
+		if(noMoreData) createTableRows ()
 
 		if(data.length < listLimit && !noMoreData) {
 			console.log("list less than limit, loading more")
@@ -310,7 +318,7 @@ const Tabulated = () => {
 			tableDataLocal = tableData
 			// console.log({tableDataLocal})
 			table.setData(tableDataLocal);
-			document.querySelector(".tabulator-tableholder").scrollTop = scrollPosition
+			if(currentPage > 1) document.querySelector(".tabulator-tableholder").scrollTop = scrollPosition
 			// el.scrollTo(0, scroll)
 			
 		} 
@@ -321,28 +329,39 @@ const Tabulated = () => {
 		if(env && table) {
 
 			resetTableHandler ()
+
 			// createTableRows ();
 		} 
-		// (async () => {
-		// 	await setResetTable(true)
 
-		// })()
 
 	}, [currency, vendor])
 
 	useEffect(() => {
+
+
 		
 		if(table){
 	 
-			table.hideColumn("childasin") 
-			table.hideColumn("asin") 
+			
 
-			table.deleteColumn("childasin");
-			table.deleteColumn("asin");
-			console.log("deleting childasin, asin, columns")
+			console.log("table created")
+
+			let addColumn = [
+				{title: "ASIN Description", field: "asin", frozen: true, width: 180, formatter: 'html', headerSort: false	},
+				{title: "(Child) ASIN", field: "childasin", frozen: true, headerSort: false},
+				];
+			Promise.all([
+				table.addColumn(addColumn[0], true, "values"),
+				table.addColumn(addColumn[1], true, "values")
+			]).then(resp => {
+				console.log("deleting columns")
+				table.hideColumn("childasin") 
+				table.hideColumn("asin") 
+			})
+			// addColumn.forEach( x => table.addColumn(x,true,"values"));
 
 
-			// console.log({table})
+
 			table.on("scrollVertical", function(top){
 			        //top - the current vertical scroll position
 				
@@ -361,6 +380,7 @@ const Tabulated = () => {
 
 	useEffect(() => {
 		if(clients.length > 0) addData();
+		
 	}, [clients])
 
 	useEffect( () => {
@@ -369,18 +389,16 @@ const Tabulated = () => {
 		if(currentPage == null) setCurrentPage(1)
 		if(env && currentPage != null && table) {
 
-			getClientList()
-			// addData()
+			if(!clientsLoaded) getClientList();
+			else addData();	
+			// 
 		}
 	}, [currentPage])
 
 	useEffect( () => {
 		console.log({loading})
 		load = loading
-		// if(!loading && page > 1) {
-		// 	let el = document.querySelector(".tabulator-tableholder")
-		// 	el.scrollTo(0, scroll)
-		// }
+
 		if(loading) {
 			console.log("trigger load data")
 			setCurrentPageHandler()
@@ -393,15 +411,18 @@ const Tabulated = () => {
 
 	useEffect(() => {
 		if(resetTable) {
-			resetTableHandler()
+			resetTableHandler()	
 		}
 	}, [resetTable])
 
 	useEffect(() => {
 		console.log({noMoreData})
-		createTableRows()
+		// if(noMoreData) createTableRows()
 	}, [noMoreData])
 
+	useEffect(() => {
+		console.log({clientsLoaded})
+	}, [clientsLoaded])
 
 
 	return (

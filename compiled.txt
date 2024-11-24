@@ -107,8 +107,9 @@ const DOMO = {
     };
   }(),
   onFilterUpdate: function () {
-    var _ref5 = _asyncToGenerator(function* (getClientList, setData, filterUpdates) {
+    var _ref5 = _asyncToGenerator(function* (setData, filterUpdates, setClientsLoaded) {
       domo.onFiltersUpdate(e => {
+        setClientsLoaded(false);
         let operandWord = ["GREATER_THAN", "GREAT_THAN_EQUALS_TO", "LESS_THAN", "LESS_THAN_EQUALS_TO", "BETWEEN", "EQUALS", "NOT_EQUALS", "IN"];
         let operandSql = [">", ">=", "<", "<=", "BETWEEN", "=", "<>", "IN"];
         let includeList = [];
@@ -282,6 +283,7 @@ const AppContextProvider = ({
   const [test] = useState('test');
   const [env, setEnv] = useState(null);
   const [clients, setClients] = useState([]);
+  const [clientsLoaded, setClientsLoaded] = useState(false);
   const [data, setData] = useState([]);
   const [dataHistory, setDataHistory] = useState([]);
   const [weekDates, setWeekDates] = useState([]);
@@ -332,7 +334,9 @@ const AppContextProvider = ({
       resetTable,
       setResetTable,
       dataHistory,
-      setDataHistory
+      setDataHistory,
+      clientsLoaded,
+      setClientsLoaded
     }
   }, children);
 };
@@ -356,7 +360,9 @@ const Tabulated = () => {
     clients,
     setClients,
     setResetTable,
-    resetTable
+    resetTable,
+    clientsLoaded,
+    setClientsLoaded
   } = context;
   const [tableData, setTableData] = useState([]);
   const [currentPage, setCurrentPage] = useState(null);
@@ -376,25 +382,17 @@ const Tabulated = () => {
       groupBy: "childasin",
       placeholder: "Loading...",
       groupHeader: function (value, count, data, group) {
-        // console.log({value, count, data, group})
-        // console.log(data.filter( x => x.asin != "")[0].asin)	
         let title = data.filter(x => x.asin != "")[0];
         return title.asin;
       },
+      rowFormatter: row => {
+        // console.log({row})
+      },
       selectableRows: false,
-      columns: [{
-        title: "ASIN Description",
-        field: "asin",
-        frozen: true,
-        width: 150,
-        formatter: 'html',
-        headerSort: false
-      }, {
-        title: "(Child) ASIN",
-        field: "childasin",
-        frozen: true,
-        headerSort: false
-      }, {
+      columns: [
+      // {title: "ASIN Description", field: "asin", frozen: true, width: 180, formatter: 'html', headerSort: false	},
+      // {title: "(Child) ASIN", field: "childasin", frozen: true, headerSort: false},
+      {
         title: "Values",
         field: "values",
         frozen: true,
@@ -417,6 +415,8 @@ const Tabulated = () => {
       }]
     });
     // console.log({createTableCols:initTable })
+    // initTable.hideColumn("childasin") 
+    // initTable.hideColumn("asin") 
     setTable(initTable);
   };
   const createTableData = () => {
@@ -428,14 +428,7 @@ const Tabulated = () => {
       let displayValue = isFinite(value) ? field == 'cvr' ? (value * 100).toFixed(fix) : value.toFixed(fix) : 0;
       return `${field == 'sales' ? '$' : ''}${numberWithCommas(displayValue)}${['cvr', 'cvr_total'].includes(field) ? '%' : ''}`;
     };
-
-    // let valueFormatter = (cell, {field}, onRendered ) => {
-    // 	return field
-    // }
-
     let weekRows = (field, dataset, formatted) => {
-      // console.log({weekRows: { field, client: dataset[0]['Client Title'], formatted}})
-
       let weeksArr = {};
       total = 0;
       for (let x in weekDates) {
@@ -444,10 +437,6 @@ const Tabulated = () => {
         weeksArr[weekDates[x]] = formatted ? valueFormatted : value;
         total = total + value;
       }
-      // if(fields == '') weeksArr['childasin'] = dataset[0]['(Child) ASIN']
-      // else weeksArr['childasin'] = ""
-      // console.log({childasin: dataset[0]['(Child) ASIN']})
-
       return {
         ...weeksArr,
         total: ['cvr', ''].includes(field) ? "" : formatted ? valueFormatter(total, field) : total
@@ -471,24 +460,24 @@ const Tabulated = () => {
 					${newData[x][0]['(Child) ASIN']} &bull; ${newData[x][0]['Product Name'] || `...`}  
 				</div>`;
       let tableRow = [{
-        asin: asinHTML(),
+        asin: asinHTML(0),
         // values: "",
         // ...weekRows('', null)
         childasin: newData[x][0]['(Child) ASIN'],
         values: "Units",
         ...unitsFormatted
       }, {
-        asin: "",
+        asin: null,
         childasin: newData[x][0]['(Child) ASIN'],
         values: "Sales",
         ...sales
       }, {
-        asin: "",
+        asin: null,
         childasin: newData[x][0]['(Child) ASIN'],
         values: "Sessions",
         ...sessionsFormatted
       }, {
-        asin: "",
+        asin: null,
         childasin: newData[x][0]['(Child) ASIN'],
         values: "CVR",
         ...cvrFormatted,
@@ -520,20 +509,12 @@ const Tabulated = () => {
       newTable = [...newTable, ...x];
     });
     tableRowArr = newTable;
-
-    // console.log({tableRowArr})
-    // tableDataLocal = tableRowArr
-    // setTableData(tableRowArr);
-    // table.setData(tableDataLocal);
-
     return tableRowArr;
   };
   const createTableRows = () => {
+    console.log("creating table rows");
     let newTableData = tableData;
-    // console.log({newTableData1: newTableData})
-    // newTableData = newTableData.concat(createTableData())
     newTableData = [...newTableData, ...createTableData()];
-    // console.log({newTableData2: newTableData})
     console.log({
       newTableData
     });
@@ -579,10 +560,6 @@ const Tabulated = () => {
       } finally {
         setLoading(false);
         load = false;
-        // console.log({scrollPosition})
-
-        // console.log(table.getRows("all"))
-        // table.scrollTo("center")
       }
     });
     return function addData() {
@@ -602,7 +579,7 @@ const Tabulated = () => {
   const resetTableHandler = () => {
     console.log("reseting table data");
     setNoMoreData(false);
-    setClients([]);
+    if (!clientsLoaded) setClients([]);
     setData([]);
     setTableData([]);
     setCurrentPage(null);
@@ -618,6 +595,7 @@ const Tabulated = () => {
         getClientList: list
       });
       setClients(list);
+      setClientsLoaded(true);
       return;
     });
     return function getClientList() {
@@ -631,8 +609,9 @@ const Tabulated = () => {
     if (data.length >= listLimit && weekDates.length > 0) {
       // console.log({data})
       createTableRows();
-      console.log("create table rows");
+      // console.log("create table rows")
     }
+    if (noMoreData) createTableRows();
     if (data.length < listLimit && !noMoreData) {
       console.log("list less than limit, loading more");
       console.log({
@@ -657,7 +636,7 @@ const Tabulated = () => {
       tableDataLocal = tableData;
       // console.log({tableDataLocal})
       table.setData(tableDataLocal);
-      document.querySelector(".tabulator-tableholder").scrollTop = scrollPosition;
+      if (currentPage > 1) document.querySelector(".tabulator-tableholder").scrollTop = scrollPosition;
       // el.scrollTo(0, scroll)
     }
   }, [tableData]);
@@ -666,22 +645,33 @@ const Tabulated = () => {
 
     if (env && table) {
       resetTableHandler();
+
       // createTableRows ();
     }
-    // (async () => {
-    // 	await setResetTable(true)
-
-    // })()
   }, [currency, vendor]);
   useEffect(() => {
     if (table) {
-      table.hideColumn("childasin");
-      table.hideColumn("asin");
-      table.deleteColumn("childasin");
-      table.deleteColumn("asin");
-      console.log("deleting childasin, asin, columns");
+      console.log("table created");
+      let addColumn = [{
+        title: "ASIN Description",
+        field: "asin",
+        frozen: true,
+        width: 180,
+        formatter: 'html',
+        headerSort: false
+      }, {
+        title: "(Child) ASIN",
+        field: "childasin",
+        frozen: true,
+        headerSort: false
+      }];
+      Promise.all([table.addColumn(addColumn[0], true, "values"), table.addColumn(addColumn[1], true, "values")]).then(resp => {
+        console.log("deleting columns");
+        table.hideColumn("childasin");
+        table.hideColumn("asin");
+      });
+      // addColumn.forEach( x => table.addColumn(x,true,"values"));
 
-      // console.log({table})
       table.on("scrollVertical", function (top) {
         //top - the current vertical scroll position
 
@@ -705,8 +695,8 @@ const Tabulated = () => {
     });
     if (currentPage == null) setCurrentPage(1);
     if (env && currentPage != null && table) {
-      getClientList();
-      // addData()
+      if (!clientsLoaded) getClientList();else addData();
+      // 
     }
   }, [currentPage]);
   useEffect(() => {
@@ -714,10 +704,6 @@ const Tabulated = () => {
       loading
     });
     load = loading;
-    // if(!loading && page > 1) {
-    // 	let el = document.querySelector(".tabulator-tableholder")
-    // 	el.scrollTo(0, scroll)
-    // }
     if (loading) {
       console.log("trigger load data");
       setCurrentPageHandler();
@@ -736,8 +722,13 @@ const Tabulated = () => {
     console.log({
       noMoreData
     });
-    createTableRows();
+    // if(noMoreData) createTableRows()
   }, [noMoreData]);
+  useEffect(() => {
+    console.log({
+      clientsLoaded
+    });
+  }, [clientsLoaded]);
   return /*#__PURE__*/React.createElement("div", {
     id: "table",
     className: "my-1 border border-secondary"
@@ -859,87 +850,19 @@ const Index = () => {
   } = React;
   const context = useContext(AppContext);
   const {
-    test,
     env,
     setEnv,
-    clients,
-    setClients,
-    data,
     setData,
-    pages,
-    setPages,
-    setPageNow,
-    pageNow,
-    table,
     setResetTable,
-    dataHistory,
-    setDataHistory
+    setClientsLoaded
   } = context;
-  const [listLimit] = useState(20);
-  const getClientList = /*#__PURE__*/function () {
-    var _ref8 = _asyncToGenerator(function* () {
-      console.log('getClientList');
-      let list = yield DOMO.getClientTitles();
-      console.log({
-        getClientList: list
-      });
-      setClients(list);
-      setPageNow(1);
-      return;
-    });
-    return function getClientList() {
-      return _ref8.apply(this, arguments);
-    };
-  }();
-
-  // const goToPage = () => {
-  // 	table.clearData();
-  // 	// console.log(table)
-  // 	let from = (listLimit * pageNow) - listLimit, to = listLimit * pageNow
-  // 	console.log({pageNow, from , to})
-  // 	let pageList = clients.slice(from, to)
-  // 	getData(pageList)
-  // }
-
-  const setPagesHandler = () => {
-    console.log('setPageHandler');
-    let listShow = listLimit;
-    let pageCount = Math.ceil(clients.length / listShow);
-    console.log({
-      pageCount
-    });
-    setPages(pageCount);
-    let page1 = clients.slice(0, listShow);
-    getData(page1);
-  };
-  const getData = /*#__PURE__*/function () {
-    var _ref9 = _asyncToGenerator(function* (list) {
-      // console.log({getData: list})
-      let data3 = yield DOMO.getYearData(list);
-      // console.log({dataList: data3})
-
-      let dataList = list.map(x => data3.filter(xx => xx['Product ID'] == x)).map(x => x.sort(function (a, b) {
-        return new Date(b['Date String']) - new Date(a['Date String']);
-      }));
-      dataList = dataList.filter(x => x.length > 0);
-      // console.log({dataList})
-      // if(dataList.length < listLimit) {
-
-      // 	return
-      // }
-      setData(dataList);
-    });
-    return function getData(_x5) {
-      return _ref9.apply(this, arguments);
-    };
-  }();
   const getEnv = /*#__PURE__*/function () {
-    var _ref10 = _asyncToGenerator(function* () {
+    var _ref8 = _asyncToGenerator(function* () {
       let resp = yield DOMO.getEnv();
       setEnv(resp);
     });
     return function getEnv() {
-      return _ref10.apply(this, arguments);
+      return _ref8.apply(this, arguments);
     };
   }();
   const filterUpdates = () => {
@@ -951,36 +874,13 @@ const Index = () => {
     DOMO.context = context;
     getEnv();
   }, []);
-
-  // useEffect(() => {
-  // 	console.log({data})
-  // }, [data])
-
   useEffect(() => {
     console.log(env ? 'live' : 'not live');
     if (env) {
-      DOMO.onFilterUpdate(getClientList, setData, filterUpdates);
-      // DOMO.getColumns()
-      getClientList();
+      DOMO.onFilterUpdate(setData, filterUpdates, setClientsLoaded);
+      setResetTable(true);
     }
   }, [env]);
-  useEffect(() => {
-    // console.log({clients})
-    // if(clients.length > 0) setPagesHandler()
-  }, [clients]);
-  useEffect(() => {
-    if (pages) console.log({
-      pages
-    });
-  }, [pages]);
-
-  // useEffect(() => {
-  // 	if(env && data.length > 0) {
-  // 		goToPage()
-  // 	}
-
-  // }, [pageNow])
-
   return /*#__PURE__*/React.createElement("div", {
     className: "p-1"
   }, /*#__PURE__*/React.createElement(Filters, null), /*#__PURE__*/React.createElement(Tabulated, null));

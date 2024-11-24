@@ -111,11 +111,12 @@ const DOMO = {
 		// return data
 
 	},
-	onFilterUpdate: async (getClientList, setData, filterUpdates) => {
+	onFilterUpdate: async (setData, filterUpdates, setClientsLoaded) => {
 
 		
 
-		domo.onFiltersUpdate( e =>  {
+		domo.onFiltersUpdate( e =>  {	
+			setClientsLoaded(false)
 			
 			let operandWord = [
 				"GREATER_THAN", 

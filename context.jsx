@@ -6,7 +6,10 @@ const AppContextProvider = ({children}) => {
 
 	const [test] = useState('test')
 	const [env, setEnv] = useState(null)
+
 	const [clients, setClients]  = useState([])
+	const [clientsLoaded, setClientsLoaded] = useState(false)
+
 	const [data, setData] = useState([])
 	const [dataHistory, setDataHistory] = useState([])
 	const [weekDates, setWeekDates] = useState([])
@@ -53,7 +56,8 @@ const AppContextProvider = ({children}) => {
 			pageNow, setPageNow,
 			table, setTable,
 			resetTable, setResetTable,
-			dataHistory, setDataHistory
+			dataHistory, setDataHistory,
+			clientsLoaded, setClientsLoaded
 		}} >
 			{children}
 		</AppContext.Provider>
