@@ -26,6 +26,13 @@ const Tabulated = () => {
 	const [loading, setLoading] = useState(false)
 	const [scrollPosition, setScrollPosition] = useState(0)
 	const [noMoreData, setNoMoreData] = useState(false)
+
+	const [loadFunctions, setLoadFunctions] = useState([])
+
+	const [clientsCount, setClientsCount] = useState(null)
+
+	const [creatingData, setCreatingData] = useState(false)
+
 	let scroll = 0
 	let load = false
 	let page = 1
@@ -47,15 +54,10 @@ const Tabulated = () => {
 			 	return title.asin ;
 
 			 },
-			 rowFormatter: (row) => {
-
-			 	// console.log({row: row.getElement()})
-
-			 },
+			
 			 selectableRows:false,
 			columns: [
-				// {title: "ASIN Description", field: "asin", frozen: true, width: 180, formatter: 'html', headerSort: false	},
-				// {title: "(Child) ASIN", field: "childasin", frozen: true, headerSort: false},
+
 				{title: "Values", field: "values", frozen: true,  headerSort: false, formatter: (cell) => {
 					cell.getElement().classList.add("fw-bold")
 					return cell.getValue()
@@ -73,19 +75,20 @@ const Tabulated = () => {
 
 					return weeksArr
 				})(),
-				{title: "Grand Total", field: "total",  },
+				{title: "Grand Total", field: "total", headerSort: false, },
 
 				],
 		
 		})
-		// console.log({createTableCols:initTable })
-		// initTable.hideColumn("childasin") 
-		// initTable.hideColumn("asin") 
+
+
 		setTable(initTable)
 		
 	}
 
 	const createTableData = () => {
+		// console.log({createTableData: data})
+
 		let tableRowArr = [];
 		let valueFormatter = (value, field) => {
 			// return value
@@ -149,7 +152,7 @@ const Tabulated = () => {
 					asin: null	,
 					childasin: newData[x][0]['(Child) ASIN'],
 					values: "Sales",
-					...sales
+					...sales,
 				}, {
 					asin: null,
 					childasin: newData[x][0]['(Child) ASIN'],
@@ -176,8 +179,7 @@ const Tabulated = () => {
 		}
 		let newTable = [];
 		let salesIndex = 1
-		// console.log({tableRowArr})
-		// tableRowArr.sort((a, b) => b[salesIndex].total - a[salesIndex].total);
+
 		tableRowArr.forEach(x => {
 			// x[2].total = valueFormatter(x[2].total, 'sales')
 
@@ -196,11 +198,11 @@ const Tabulated = () => {
 	}
 
 	const createTableRows = () => {
+		
 		console.log("creating table rows")
-   		// let newTableData = tableData
-   		// let addition = createTableData()
+
    		let newtableData = createTableData()
-   		// // newTableData = [ ...newTableData, ...createTableData()]
+
 
    		// newTableData = tableData.concat(addition)
 
@@ -215,7 +217,7 @@ const Tabulated = () => {
   		
   		page = currentPage + 1
   		setCurrentPage(page)
-  		// console.log({page})
+  
   	}
 
   	const addData = async  () => { 
@@ -238,15 +240,14 @@ const Tabulated = () => {
 			let newDataList = pageList.map( x => newData.filter( xx => xx['Product ID'] == x))
 
 			newDataList = newDataList.filter( x => x.length > 0)
-			// console.log({newDataList})
+
 			let totalData = data.concat(newDataList)
-			// totalData = tableData.filter((x, i, arr) => arr.findIndex(xx => (xx["Product ID"] == x["Product ID"]) == i))
-			console.log({uniqeDatas: totalData})
+
 			setData(totalData)
 
 		} catch (err) {
 			console.log({err})
-			// setData([])
+		
 		}finally{
 			setLoading(false)
 			load = false
@@ -272,7 +273,8 @@ const Tabulated = () => {
 	const resetTableHandler = () => {
 		console.log("reseting table data")
 		setNoMoreData(false)
-		
+		setClientsCount(null)
+		setCreatingData(false)
 		if(!clientsLoaded) setClients([])
 		setData([])
 		setTableData([])
@@ -282,16 +284,56 @@ const Tabulated = () => {
 		table.clearData()
 	}
 
-	const getClientList = async () => {
-		console.log('getClientList')
-		let list = await DOMO.getClientTitles()
-		console.log({getClientList: list})
-		setClients(list)
-		setClientsLoaded(true)	
+	const loadRestClientList = async () => {
 
+		Promise.all(loadFunctions.map( x => x())).then( result => {
+			
+			
+
+
+			let restClients = result.flat(1)
+
+			setClients([...clients, ...restClients])
+			
+		})
+	}	
+
+	const getClientList = async () => {
+
+		let limit = 20000;
+		let count = await DOMO.countAllClients()
+		console.log({count_getClientList: count})
+		setClientsCount(count)
+		
+		let chunks = Math.ceil(count/limit)
+		// console.log(count/limit)
+		console.log({chunks})
+		let functionsArray = []
+		for(let i = 0; i < chunks; i++) {
+	
+			functionsArray.push( () => DOMO.getClientTitles(limit, i))
+		}
+
+
+		
+
+		let firstBatch = await functionsArray[0]()
+		// console.log(loadFunctions.length)
+		setClients(firstBatch)
+		functionsArray.shift()
+		setLoadFunctions(functionsArray)
+
+		console.log(functionsArray.length)
 		return
 
+
+
 	}
+
+	useEffect(() => {
+		// console.log({clients2: clients})
+		loadRestClientList()
+	}, [loadFunctions])
 
 	useEffect(() => {
 		console.log({dataLoaded: data, tableData})
@@ -394,7 +436,12 @@ const Tabulated = () => {
 	}, [table])
 
 	useEffect(() => {
-		if(clients.length > 0) addData();
+		console.log({clientsCount, clients})
+
+		if(clients.length > 0 && !clientsLoaded) {
+			addData();	
+			setClientsLoaded(true)
+		}
 		
 	}, [clients])
 
@@ -441,7 +488,11 @@ const Tabulated = () => {
 
 
 	return (
-		<div id="table" className="my-1 border border-secondary"></div>
+		<div>
+			clients: {clients.length}
+			<div id="table" className="my-1 border border-secondary"></div>
+		</div>
+		
 
 	)
 }

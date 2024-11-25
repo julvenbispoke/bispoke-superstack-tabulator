@@ -36,6 +36,15 @@ const DOMO = {
 		// console.log(env)
 		return env
 	},
+	countAllClients: async () => {
+		 let counted = await domo.post('/sql/v1/dataset0',
+	    // `SELECT COUNT("Product ID") as counted FROM dataset0 GROUP BY "Product ID"`, 
+	    `SELECT COUNT(DISTINCT("Product ID")) AS count FROM dataset0 ${DOMO.addQuery}`,
+		{contentType: 'text/plain'})
+
+	    console.log({counted})
+	    return counted.rows[0][0];
+	},
 	getColumns: async () => {
 		 let data = await domo.post('/sql/v1/dataset0',
 	    `SELECT * from dataset0 limit 1`, 
@@ -43,24 +52,40 @@ const DOMO = {
 		 console.log({getColumns: data})
 		 return data
 	},
-	getClientTitles : async () => {
+	// getClientTitles : async () => {
+	//  	let client = []
+	 	
+	//     // let sql = `SELECT "Product ID" FROM dataset0 ${DOMO.addQuery} GROUP BY "Product ID"`
+	//     let sql = `SELECT DISTINCT("Product ID") FROM dataset0 ${DOMO.addQuery}`
+	//     // console.log({sql})
 
+	//     let data = await domo.post('/sql/v1/dataset0',
+	//     sql, 
+	//     {contentType: 'text/plain'})
+	//     console.log({getClientTitles: data})
+	//     data = data.rows.map( x => x[0])
+	//     // client = data.rows.map( x => x[2]).filter( x => x != '')	
+	//     client = data.filter( x => ![undefined, null, ""].includes(x))
 
-
+	//     console.log({client, sql})
+	//     return client
+	// },
+	getClientTitles : async (limit, i) => {
 	 	let client = []
 	 	
-	    let sql = `SELECT "Product ID" FROM dataset0 ${DOMO.addQuery} GROUP BY "Product ID"`
+	    // let sql = `SELECT "Product ID" FROM dataset0 ${DOMO.addQuery} GROUP BY "Product ID"`
+	    let sql = `SELECT DISTINCT("Product ID") FROM dataset0 ${DOMO.addQuery} limit ${limit} OFFSET ${i * limit}`
 	    // console.log({sql})
 
 	    let data = await domo.post('/sql/v1/dataset0',
 	    sql, 
 	    {contentType: 'text/plain'})
-	    console.log({getClientTitles: data})
+	    // console.log({getClientTitles: data})
 	    data = data.rows.map( x => x[0])
 	    // client = data.rows.map( x => x[2]).filter( x => x != '')	
 	    client = data.filter( x => ![undefined, null, ""].includes(x))
 
-	    console.log({client, sql})
+	    console.log({client, sql, data})
 	    return client
 	},
 	getYearData :async (value) => {
@@ -85,7 +110,7 @@ const DOMO = {
 	    sql, 
 	    {contentType: 'text/plain'})
 
-		 console.log({dataColumns: resp.columns})
+		 // console.log({dataColumns: resp.columns})
 		 let dataArr = []
 		 resp.rows.forEach( (x, i) => {
 		 	let dataObj = {}
