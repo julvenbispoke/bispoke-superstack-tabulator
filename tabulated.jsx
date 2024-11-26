@@ -31,7 +31,6 @@ const Tabulated = () => {
 
 	const [clientsCount, setClientsCount] = useState(null)
 
-	const [creatingData, setCreatingData] = useState(false)
 
 	let scroll = 0
 	let load = false
@@ -136,7 +135,7 @@ const Tabulated = () => {
 
 			let asinHTML = () => `
 				<div class="text-truncate fw-bold text-wrap"  title="${newData[x][0]['Product Name']}">
-					${newData[x][0]['(Child) ASIN']} &bull; ${newData[x][0]['Product Name'] || `...`}  
+					${newData[x][0]['(Child) ASIN']} &bull; ${newData[x][0]['Amazon Marketplace']} &bull; ${newData[x][0]['Product Name'] || `...`}  
 				</div>`;
 
 			let tableRow = [{
@@ -274,7 +273,7 @@ const Tabulated = () => {
 		console.log("reseting table data")
 		setNoMoreData(false)
 		setClientsCount(null)
-		setCreatingData(false)
+	
 		if(!clientsLoaded) setClients([])
 		setData([])
 		setTableData([])
@@ -300,7 +299,7 @@ const Tabulated = () => {
 
 	const getClientList = async () => {
 
-		let limit = 20000;
+		let limit = 10000;
 		let count = await DOMO.countAllClients()
 		console.log({count_getClientList: count})
 		setClientsCount(count)
@@ -489,7 +488,7 @@ const Tabulated = () => {
 
 	return (
 		<div>
-			clients: {clients.length}
+			{/*clients: {clients.length}*/}
 			<div id="table" className="my-1 border border-secondary"></div>
 		</div>
 		

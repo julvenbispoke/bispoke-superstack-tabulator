@@ -8,7 +8,7 @@ const DOMO = {
         'Shipped Units - SRC',
         'Foreign - Ordered Product Sales (OPS)',
         'Foreign - Ordered Revenue - MFG',
-
+        'Amazon Marketplace',
         'Foreign - Shipped COGS - SRC',
         'Ordered Product Sales (OPS)',
         'Ordered Revenue - MFG',
@@ -42,14 +42,14 @@ const DOMO = {
 	    `SELECT COUNT(DISTINCT("Product ID")) AS count FROM dataset0 ${DOMO.addQuery}`,
 		{contentType: 'text/plain'})
 
-	    console.log({counted})
+	    // console.log({counted})
 	    return counted.rows[0][0];
 	},
 	getColumns: async () => {
 		 let data = await domo.post('/sql/v1/dataset0',
 	    `SELECT * from dataset0 limit 1`, 
 	    {contentType: 'text/plain'})
-		 console.log({getColumns: data})
+		 // console.log({getColumns: data})
 		 return data
 	},
 	// getClientTitles : async () => {
@@ -71,10 +71,11 @@ const DOMO = {
 	//     return client
 	// },
 	getClientTitles : async (limit, i) => {
+		console.log("getting sql CLIENT data")
 	 	let client = []
 	 	
 	    // let sql = `SELECT "Product ID" FROM dataset0 ${DOMO.addQuery} GROUP BY "Product ID"`
-	    let sql = `SELECT DISTINCT("Product ID") FROM dataset0 ${DOMO.addQuery} limit ${limit} OFFSET ${i * limit}`
+	    let sql = `SELECT DISTINCT("Product ID") FROM dataset0 ${DOMO.addQuery} limit ${limit} OFFSET ${i * limit} `
 	    // console.log({sql})
 
 	    let data = await domo.post('/sql/v1/dataset0',
@@ -85,12 +86,12 @@ const DOMO = {
 	    // client = data.rows.map( x => x[2]).filter( x => x != '')	
 	    client = data.filter( x => ![undefined, null, ""].includes(x))
 
-	    console.log({client, sql, data})
+	    // console.log({client, sql, data})
 	    return client
 	},
 	getYearData :async (value) => {
 		
-		
+		console.log("getting sql PRODUCT data")
 
 		// let url = `/data/v1/dataset0?fields=${DOMO.columns.join(",")}&filter='SKU'=='${value}'`
 		// // let url = `/data/v1/dataset0?fields=${DOMO.columns.join(",")}&filter='Product ID'==${value}`
@@ -103,7 +104,7 @@ const DOMO = {
 					FROM 
 					dataset0 
 					WHERE "Product ID" IN (${value.map( x => `'${x}'`).join(",")}) 
-					AND "Data Type ID" IN (1,6) `
+					AND "Data Type ID" IN (1,6) AND "Amazon Marketplace" = 'USA' ` 
 		sql = sql.replaceAll("\n", " ").replaceAll("\t","")
 		// console.log({clientList: value, query: sql})	
 		 let resp = await domo.post('/sql/v1/dataset0',

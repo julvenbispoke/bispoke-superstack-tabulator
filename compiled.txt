@@ -8,7 +8,7 @@ const DOMO = {
         'Shipped Units - SRC',
         'Foreign - Ordered Product Sales (OPS)',
         'Foreign - Ordered Revenue - MFG',
-
+        'Amazon Marketplace',
         'Foreign - Shipped COGS - SRC',
         'Ordered Product Sales (OPS)',
         'Ordered Revenue - MFG',
@@ -42,14 +42,14 @@ const DOMO = {
 	    `SELECT COUNT(DISTINCT("Product ID")) AS count FROM dataset0 ${DOMO.addQuery}`,
 		{contentType: 'text/plain'})
 
-	    console.log({counted})
+	    // console.log({counted})
 	    return counted.rows[0][0];
 	},
 	getColumns: async () => {
 		 let data = await domo.post('/sql/v1/dataset0',
 	    `SELECT * from dataset0 limit 1`, 
 	    {contentType: 'text/plain'})
-		 console.log({getColumns: data})
+		 // console.log({getColumns: data})
 		 return data
 	},
 	// getClientTitles : async () => {
@@ -71,10 +71,11 @@ const DOMO = {
 	//     return client
 	// },
 	getClientTitles : async (limit, i) => {
+		console.log("getting sql CLIENT data")
 	 	let client = []
 	 	
 	    // let sql = `SELECT "Product ID" FROM dataset0 ${DOMO.addQuery} GROUP BY "Product ID"`
-	    let sql = `SELECT DISTINCT("Product ID") FROM dataset0 ${DOMO.addQuery} limit ${limit} OFFSET ${i * limit}`
+	    let sql = `SELECT DISTINCT("Product ID") FROM dataset0 ${DOMO.addQuery} limit ${limit} OFFSET ${i * limit} `
 	    // console.log({sql})
 
 	    let data = await domo.post('/sql/v1/dataset0',
@@ -85,12 +86,12 @@ const DOMO = {
 	    // client = data.rows.map( x => x[2]).filter( x => x != '')	
 	    client = data.filter( x => ![undefined, null, ""].includes(x))
 
-	    console.log({client, sql, data})
+	    // console.log({client, sql, data})
 	    return client
 	},
 	getYearData :async (value) => {
 		
-		
+		console.log("getting sql PRODUCT data")
 
 		// let url = `/data/v1/dataset0?fields=${DOMO.columns.join(",")}&filter='SKU'=='${value}'`
 		// // let url = `/data/v1/dataset0?fields=${DOMO.columns.join(",")}&filter='Product ID'==${value}`
@@ -103,7 +104,7 @@ const DOMO = {
 					FROM 
 					dataset0 
 					WHERE "Product ID" IN (${value.map( x => `'${x}'`).join(",")}) 
-					AND "Data Type ID" IN (1,6) `
+					AND "Data Type ID" IN (1,6) AND "Amazon Marketplace" = 'USA' ` 
 		sql = sql.replaceAll("\n", " ").replaceAll("\t","")
 		// console.log({clientList: value, query: sql})	
 		 let resp = await domo.post('/sql/v1/dataset0',
@@ -470,7 +471,6 @@ const Tabulated = () => {
 
 	const [clientsCount, setClientsCount] = useState(null)
 
-	const [creatingData, setCreatingData] = useState(false)
 
 	let scroll = 0
 	let load = false
@@ -496,8 +496,7 @@ const Tabulated = () => {
 			
 			 selectableRows:false,
 			columns: [
-				// {title: "ASIN Description", field: "asin", frozen: true, width: 180, formatter: 'html', headerSort: false	},
-				// {title: "(Child) ASIN", field: "childasin", frozen: true, headerSort: false},
+
 				{title: "Values", field: "values", frozen: true,  headerSort: false, formatter: (cell) => {
 					cell.getElement().classList.add("fw-bold")
 					return cell.getValue()
@@ -520,9 +519,8 @@ const Tabulated = () => {
 				],
 		
 		})
-		// console.log({createTableCols:initTable })
-		// initTable.hideColumn("childasin") 
-		// initTable.hideColumn("asin") 
+
+
 		setTable(initTable)
 		
 	}
@@ -577,7 +575,7 @@ const Tabulated = () => {
 
 			let asinHTML = () => `
 				<div class="text-truncate fw-bold text-wrap"  title="${newData[x][0]['Product Name']}">
-					${newData[x][0]['(Child) ASIN']} &bull; ${newData[x][0]['Product Name'] || `...`}  
+					${newData[x][0]['(Child) ASIN']} &bull; ${newData[x][0]['Amazon Marketplace']} &bull; ${newData[x][0]['Product Name'] || `...`}  
 				</div>`;
 
 			let tableRow = [{
@@ -620,8 +618,7 @@ const Tabulated = () => {
 		}
 		let newTable = [];
 		let salesIndex = 1
-		// console.log({tableRowArr})
-		// tableRowArr.sort((a, b) => b[salesIndex].total - a[salesIndex].total);
+
 		tableRowArr.forEach(x => {
 			// x[2].total = valueFormatter(x[2].total, 'sales')
 
@@ -642,10 +639,9 @@ const Tabulated = () => {
 	const createTableRows = () => {
 		
 		console.log("creating table rows")
-   		// let newTableData = tableData
-   		// let addition = createTableData()
+
    		let newtableData = createTableData()
-   		// // newTableData = [ ...newTableData, ...createTableData()]
+
 
    		// newTableData = tableData.concat(addition)
 
@@ -660,7 +656,7 @@ const Tabulated = () => {
   		
   		page = currentPage + 1
   		setCurrentPage(page)
-  		// console.log({page})
+  
   	}
 
   	const addData = async  () => { 
@@ -683,15 +679,14 @@ const Tabulated = () => {
 			let newDataList = pageList.map( x => newData.filter( xx => xx['Product ID'] == x))
 
 			newDataList = newDataList.filter( x => x.length > 0)
-			// console.log({newDataList})
+
 			let totalData = data.concat(newDataList)
-			// totalData = tableData.filter((x, i, arr) => arr.findIndex(xx => (xx["Product ID"] == x["Product ID"]) == i))
-			// console.log({uniqeDatas: totalData})
+
 			setData(totalData)
 
 		} catch (err) {
 			console.log({err})
-			// setData([])
+		
 		}finally{
 			setLoading(false)
 			load = false
@@ -718,7 +713,7 @@ const Tabulated = () => {
 		console.log("reseting table data")
 		setNoMoreData(false)
 		setClientsCount(null)
-		setCreatingData(false)
+	
 		if(!clientsLoaded) setClients([])
 		setData([])
 		setTableData([])
@@ -733,17 +728,10 @@ const Tabulated = () => {
 		Promise.all(loadFunctions.map( x => x())).then( result => {
 			
 			
-			// let oldList = clients
-			// console.log({oldList, result})
-			// setClients([...oldList, ...result])
 
-			// console.log({result})
 
 			let restClients = result.flat(1)
-			// console.log({restClients})
 
-			// let oldClient = clients
-			// console.log({clients, restClients})
 			setClients([...clients, ...restClients])
 			
 		})
@@ -751,14 +739,7 @@ const Tabulated = () => {
 
 	const getClientList = async () => {
 
-		// console.log('getClientList')
-		// let list = await DOMO.getClientTitles()
-		// console.log({getClientList: list})
-		// setClients(list)
-		// setClientsLoaded(true)	
-
-		// return
-		let limit = 40000;
+		let limit = 10000;
 		let count = await DOMO.countAllClients()
 		console.log({count_getClientList: count})
 		setClientsCount(count)
@@ -947,7 +928,7 @@ const Tabulated = () => {
 
 	return (
 		<div>
-			clients: {clients.length}
+			{/*clients: {clients.length}*/}
 			<div id="table" className="my-1 border border-secondary"></div>
 		</div>
 		
