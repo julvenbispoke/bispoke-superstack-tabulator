@@ -3,11 +3,10 @@ const Index = () => {
 	const {useState, useEffect, useContext} = React
 	const context = useContext(AppContext)
 	const {
-		env, 
-		setEnv,
-		setData, 	
-		setResetTable,
-		setClientsLoaded
+		env, setEnv,
+			currency, setCurrency,
+			vendor, setVendor
+		
 	} = context
 
 	const getEnv = async () => {
@@ -32,23 +31,21 @@ const Index = () => {
 	useEffect(() => {
 		console.log(env ? 'live':'not live')
 		if(env) {
-			DOMO.onFilterUpdate(setData, filterUpdates, setClientsLoaded)
-			
-			setResetTable(true)
+			// DOMO.onFilterUpdate(setData, filterUpdates, setClientsLoaded)
+			// setResetTable(true)
+
+			DOMO.onFilterUpdate()
 		}
 	}, [env])
 
 
-
-
-
-
-	
-
 	return (
 		<div className="p-1">
 			<Filters />
-			<Tabulated />
+			{/*<Tabulated />*/}
+			
+			<TabulatedPagination/>
+			<Pagination />
 		</div>
 	)	
 }

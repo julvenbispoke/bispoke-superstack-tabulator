@@ -123,6 +123,7 @@ const Tabulated = () => {
 		// data.forEach( x => {
 		let newData = data.filter(x => x.length > 0);
 		for (let x in newData) {
+
 			// console.log({dataX: x})
 			let units = weekRows('units', newData[x], false),
 			unitsFormatted = weekRows('units', newData[x], true);
@@ -133,36 +134,21 @@ const Tabulated = () => {
 			let cvr = weekRows('cvr', newData[x], false),
 			cvrFormatted = weekRows('cvr', newData[x], true);
 
+
+			let name = newData[x][0]['Product Name'] || "",
+				asin = newData[x][0]['(Child) ASIN'] || "",
+				market = newData[x][0]['Amazon Marketplace'] || "",
+
 			let asinHTML = () => `
-				<div class="text-truncate fw-bold text-wrap"  title="${newData[x][0]['Product Name']}">
-					${newData[x][0]['(Child) ASIN']} &bull; ${newData[x][0]['Amazon Marketplace']} &bull; ${newData[x][0]['Product Name'] || `...`}  
+				<div class="text-truncate fw-bold text-wrap"  title="${name}">
+					${asin} &bull; ${market} &bull; ${name || "...."}  
 				</div>`;
 
-			let tableRow = [{
-					asin: asinHTML(0),
-					// values: "",
-					// ...weekRows('', null)
-					childasin: newData[x][0]['(Child) ASIN'],
-					values: "Units",
-					...unitsFormatted
-				}, 
-
-				{
-					asin: null	,
-					childasin: newData[x][0]['(Child) ASIN'],
-					values: "Sales",
-					...sales,
-				}, {
-					asin: null,
-					childasin: newData[x][0]['(Child) ASIN'],
-					values: "Sessions",
-					...sessionsFormatted
-				}, {
-					asin: null,
-					childasin: newData[x][0]['(Child) ASIN'],
-					values: "CVR",
-					...cvrFormatted,
-					total: (() => {
+			let tableRow = [
+				{asin: asinHTML(0),childasin: asin ,values: "Units",...unitsFormatted}, 
+				{asin: null, childasin: asin,values: "Sales",...sales,}, 
+				{asin: null, childasin: asin ,values: "Sessions",...sessionsFormatted}, 
+				{asin: null, childasin: asin ,values: "CVR",...cvrFormatted, total: (() => {
 					let show = isFinite(sessions.total / units.total);
 					let res = valueFormatter(sessions.total / units.total, 'cvr_total');
 					// let res =  sessions.total/units.total
@@ -178,9 +164,9 @@ const Tabulated = () => {
 		}
 		let newTable = [];
 		let salesIndex = 1
-
+		// tableRowArr = tableRowArr.sort( (a,b) => a.total - b.total)
 		tableRowArr.forEach(x => {
-			// x[2].total = valueFormatter(x[2].total, 'sales')
+			// x[2].total = valueFormatter(x[2].total, 'sales')	
 
 
 			Object.keys(x[salesIndex]).forEach(xx => {
@@ -313,9 +299,6 @@ const Tabulated = () => {
 			functionsArray.push( () => DOMO.getClientTitles(limit, i))
 		}
 
-
-		
-
 		let firstBatch = await functionsArray[0]()
 		// console.log(loadFunctions.length)
 		setClients(firstBatch)
@@ -324,9 +307,6 @@ const Tabulated = () => {
 
 		console.log(functionsArray.length)
 		return
-
-
-
 	}
 
 	useEffect(() => {

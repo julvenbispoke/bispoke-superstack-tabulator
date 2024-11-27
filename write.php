@@ -11,8 +11,10 @@ $compiled = "";
 $files = [
     "domo_functions.js",
     "value_calculator.js",
-    "context.jsx",  
-    "tabulated.jsx",
+    // "context.jsx",  
+    "context_pagination.jsx",  
+    // "tabulated.jsx",
+     "tabulated_pagination.jsx",
     "filters.jsx",
     "pagination.jsx",
 

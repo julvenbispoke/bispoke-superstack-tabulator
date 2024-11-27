@@ -23,44 +23,15 @@
 	<div id="app"></div>
 	<script type="text/javascript">
 		// console.log(moment)
-		let files = [
-    "domo_functions.js",
-    "value_calculator.js",
-    "context.jsx",  
-    "tabulated.jsx",
-    "filters.jsx",
-    "pagination.jsx",
 
-    "index.jsx",
-      ]
     let loaded = []
     let promises = []
 
     const init = async () => {
       
-      files.forEach( x => {
-        promises.push( () => fetch(x) )
-      })
 
-      let res = await Promise.all(promises.map( x => x()));
 
-      for( i in res) {
-        let res2 = await res[i].text()
-        loaded.push(res2)
-      }
-      
-
-     
-
-      
-
-      const formData = new FormData();
-      formData.append('files', JSON.stringify(files))
-
-      let write = await fetch("write.php", {
-        method: "POST",
-        body: formData
-      })
+      let write = await fetch("write.php")
       write = await write.text()
 
      const code =  Babel.transform(write, {

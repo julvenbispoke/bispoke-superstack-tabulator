@@ -137,13 +137,8 @@ const DOMO = {
 		// return data
 
 	},
-	onFilterUpdate: async (setData, filterUpdates, setClientsLoaded) => {
-
-		
-
-		domo.onFiltersUpdate( e =>  {	
-			setClientsLoaded(false)
-			
+	onFilterUpdate: async () => {
+		domo.onFiltersUpdate(e => {
 			let operandWord = [
 				"GREATER_THAN", 
 				"GREAT_THAN_EQUALS_TO",
@@ -154,25 +149,22 @@ const DOMO = {
 				"NOT_EQUALS",
 				"IN"
 			];
+			let operandSql = [">",">=","<","<=","BETWEEN","=","<>","IN"];
 
-			let operandSql = [">",">=","<","<=","BETWEEN","=","<>","IN"]
 
 			let includeList = []
 			let queryList = []
 			let columnList = []
 
-			
-			
 			if(e.length == 0) {
 				
-				console.log("no filters")
+
 				DOMO.addQuery = ""
 				DOMO.addColumn = ""
-				// getClientList()
-				filterUpdates()
+			
 				return
 			}
-			
+
 			e.forEach( x => {
 				let operand = -1
 				operandWord.forEach( (xx, ii) => {
@@ -187,10 +179,10 @@ const DOMO = {
 				}
 				queryList.push(`"${x.column}" ${operandSql[operand]} ${formatValue}` )
 				columnList.push(x.column)
-				// console.log({operand, word: x.operand, sql: operandSql[operand], formatValue, values: x.values})
+
 			})
 
-			// console.log(queryList.join(" AND "), e)
+
 			queryList = queryList.join(" AND ")
 			DOMO.addQuery =  `WHERE ${queryList}`
 			DOMO.addColumn = (() => {
@@ -200,12 +192,73 @@ const DOMO = {
 				}
 				return columnList
 			})()
-			// getClientList()
-			filterUpdates()
-
 		})
-		return
 	}
+	// onFilterUpdate: async (setData, filterUpdates, setClientsLoaded) => {
+
+	// 	domo.onFiltersUpdate( e =>  {	
+	// 		setClientsLoaded(false)
+			
+	// 		let operandWord = [
+	// 			"GREATER_THAN", 
+	// 			"GREAT_THAN_EQUALS_TO",
+	// 			"LESS_THAN",
+	// 			"LESS_THAN_EQUALS_TO",
+	// 			"BETWEEN",
+	// 			"EQUALS",
+	// 			"NOT_EQUALS",
+	// 			"IN"
+	// 		];
+
+	// 		let operandSql = [">",">=","<","<=","BETWEEN","=","<>","IN"]
+
+	// 		let includeList = []
+	// 		let queryList = []
+	// 		let columnList = []
+	
+	// 		if(e.length == 0) {
+				
+	// 			console.log("no filters")
+	// 			DOMO.addQuery = ""
+	// 			DOMO.addColumn = ""
+	// 			// getClientList()
+	// 			filterUpdates()
+	// 			return
+	// 		}
+			
+	// 		e.forEach( x => {
+	// 			let operand = -1
+	// 			operandWord.forEach( (xx, ii) => {
+	// 				if(xx == x.operand) operand = ii
+	// 			})
+	// 			let formatValue = x.values;
+	// 			if(x.operand == "IN") {
+	// 				formatValue = `${(typeof x.values == "object") ? `(${x.values.map(xxx =>( typeof xxx) == 'string' ? `'${xxx}'`: xxx).join(",")})` : x.values}` 
+	// 			}
+	// 			if(x.operand  == "BETWEEN") {
+	// 				formatValue =  `${x.values[0]} AND ${x.values[1]}`
+	// 			}
+	// 			queryList.push(`"${x.column}" ${operandSql[operand]} ${formatValue}` )
+	// 			columnList.push(x.column)
+	// 			// console.log({operand, word: x.operand, sql: operandSql[operand], formatValue, values: x.values})
+	// 		})
+
+	// 		// console.log(queryList.join(" AND "), e)
+	// 		queryList = queryList.join(" AND ")
+	// 		DOMO.addQuery =  `WHERE ${queryList}`
+	// 		DOMO.addColumn = (() => {
+	// 			let columnString = "";
+	// 			if(columnList.length > 0) {
+	// 				columnString = `,${columnList.map( x => `"${x}"`).join(",")}`
+	// 			}
+	// 			return columnList
+	// 		})()
+	// 		// getClientList()
+	// 		filterUpdates()
+
+	// 	})
+	// 	return
+	// }
 }
 
 
@@ -379,25 +432,21 @@ const AppContextProvider = ({children}) => {
 
 	const {useState, useEffect} = React
 
-	const [test] = useState('test')
-	const [env, setEnv] = useState(null)
-
-	const [clients, setClients]  = useState([])
-	const [clientsLoaded, setClientsLoaded] = useState(false)
-
-	const [data, setData] = useState([])
-	const [dataHistory, setDataHistory] = useState([])
-	const [weekDates, setWeekDates] = useState([])
+	const [env, setEnv] = useState(null);
+	const [clients, setClients] = useState([])
 
 	const [currency, setCurrency] = useState(false)//false == local, true == usd
 	const [vendor, setVendor] = useState(false)// false == ordered, true == shipped
 
-	const [pages, setPages] = useState(null)
-	const [pageNow, setPageNow] = useState(1)
-
 	const [table, setTable] = useState(null)
+	const [weekDates, setWeekDates] = useState([])
 
-	const [resetTable, setResetTable] = useState(false)
+	const [pageList, setPageList] = useState(null)
+	const [pageNow, setPageNow] = useState(0)
+	const [pageLimit] = useState(100)
+
+	const [tableLoading, setTableLoading] = useState(false)
+
 
 	const numberWithCommas = (x) => {
         return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -417,74 +466,57 @@ const AppContextProvider = ({children}) => {
 		// console.log(weekList)
 	},[])
 
+
+
 	return (
 		<AppContext.Provider value={{
-			test,
-			clients, setClients	,
 			env, setEnv,
-			data, setData,
-			weekDates, setWeekDates,
 			currency, setCurrency,
 			vendor, setVendor,
-			numberWithCommas,
-			pages, setPages,
-			pageNow, setPageNow,
 			table, setTable,
-			resetTable, setResetTable,
-			dataHistory, setDataHistory,
-			clientsLoaded, setClientsLoaded
+			weekDates, setWeekDates,
+			pageList, setPageList,
+			pageNow, setPageNow, pageLimit, 
+			numberWithCommas,
+			tableLoading, setTableLoading,
+			clients, setClients
+
 		}} >
 			{children}
 		</AppContext.Provider>
+
 	)
 }
-const Tabulated = () => {
+const TabulatedPagination = () => {
 
-	const {useState, useEffect, useContext} = React
+	const {useEffect, useState, useContext} = React
 	const context = useContext(AppContext)
+
 	const {
-		env, 
-		data, 
-		setData, 
-		weekDates, 
-		vendor, 
-		currency, 
-		numberWithCommas, 
-		table, 
-		setTable, 
-		clients,
-		setClients,  
-		setResetTable, 
-		resetTable,
-		clientsLoaded, 
-		setClientsLoaded
-	} = context
-
-
-	const [tableData, setTableData] = useState([])
-	const [currentPage, setCurrentPage] = useState(null)
-	const [loading, setLoading] = useState(false)
-	const [scrollPosition, setScrollPosition] = useState(0)
-	const [noMoreData, setNoMoreData] = useState(false)
-
-	const [loadFunctions, setLoadFunctions] = useState([])
+		env,
+		table, setTable,
+		weekDates, setWeekDates,
+		pageList, setPageList,
+		pageLimit, pageNow,
+		numberWithCommas,
+		tableLoading, setTableLoading,
+		clients, setClients,
+	} = context;
 
 	const [clientsCount, setClientsCount] = useState(null)
 
 
-	let scroll = 0
-	let load = false
-	let page = 1
-	let listLimit = 20
-
-	let tableDataLocal = []
+	const [loadFunctions, setLoadFunctions] = useState([])
+	const [clientListLoaded, setClientListLoaded] = useState(false)
+	const [rawData, setRawData] = useState([])
+	const [tableData, setTableData] = useState([])
 
 	const createTableCols = () => {
-
+		console.log("creating table")
 		let initTable = new Tabulator('#table', {
 			height: '80vh',
 			reactiveData: true,
-			data: tableDataLocal,
+			data: [],
 			groupBy: "childasin" ,
 			 placeholder:"Loading...",
 			 groupHeader:function(value, count, data, group) {
@@ -525,6 +557,79 @@ const Tabulated = () => {
 		
 	}
 
+	const getClientList = async () => {
+
+		let limit = 10000;
+		let count = await DOMO.countAllClients()
+		console.log({count_getClientList: count})
+		setClientsCount(count)
+		
+		let chunks = Math.ceil(count/limit)
+		// console.log(count/limit)
+		console.log({chunks})
+		let functionsArray = []
+		for(let i = 0; i < chunks; i++) {
+	
+			functionsArray.push( () => DOMO.getClientTitles(limit, i))
+		}
+
+		let firstBatch = await functionsArray[0]()
+		// console.log(loadFunctions.length)
+
+		setClients(firstBatch)
+		functionsArray.shift()
+		setLoadFunctions(functionsArray)
+
+		// console.log(functionsArray.length)
+		return
+	}
+
+	const setPagesListHandler = () => {
+		console.log("setting page list")
+		let pages = Math.ceil(clientsCount / pageLimit);
+		setPageList(pages)
+	}
+
+	const loadRestClientList = async () => {
+		console.log("load rest client data")
+
+		Promise.all(loadFunctions.map( x => x())).then( result => {
+
+			let restClients = result.flat(1)
+
+			setClients([...clients, ...restClients])
+			
+		})
+	}	
+
+	const loadData = async () => {
+		console.log("loading data")
+		// console.log(table)
+		let from = (pageLimit * pageNow) , to = (pageLimit * pageNow) + pageLimit;
+
+		let list = clients.slice(from, to)
+
+		console.log({from, to, list})
+		// return
+		try {
+			let newData = await DOMO.getYearData(list)
+			let newDataList = list.map( x => newData.filter( xx => xx['Product ID'] == x))
+
+			// newDataList = newDataList.filter( x => x.length > 0)
+
+			
+
+			setRawData([...rawData, ...newDataList])
+
+		} catch (err) {
+			console.log({err})
+		
+		}finally{
+
+
+		}
+	}
+
 	const createTableData = () => {
 		// console.log({createTableData: data})
 
@@ -561,8 +666,9 @@ const Tabulated = () => {
 		};
 
 		// data.forEach( x => {
-		let newData = data.filter(x => x.length > 0);
+		let newData = rawData.filter(x => x.length > 0);
 		for (let x in newData) {
+
 			// console.log({dataX: x})
 			let units = weekRows('units', newData[x], false),
 			unitsFormatted = weekRows('units', newData[x], true);
@@ -573,36 +679,21 @@ const Tabulated = () => {
 			let cvr = weekRows('cvr', newData[x], false),
 			cvrFormatted = weekRows('cvr', newData[x], true);
 
+
+			let name = newData[x][0]['Product Name'] || "",
+				asin = newData[x][0]['(Child) ASIN'] || "",
+				market = newData[x][0]['Amazon Marketplace'] || "";
+
 			let asinHTML = () => `
-				<div class="text-truncate fw-bold text-wrap"  title="${newData[x][0]['Product Name']}">
-					${newData[x][0]['(Child) ASIN']} &bull; ${newData[x][0]['Amazon Marketplace']} &bull; ${newData[x][0]['Product Name'] || `...`}  
+				<div class="text-truncate fw-bold text-wrap"  title="${name}">
+					${asin} &bull; ${market} &bull; ${name || "...."}  
 				</div>`;
 
-			let tableRow = [{
-					asin: asinHTML(0),
-					// values: "",
-					// ...weekRows('', null)
-					childasin: newData[x][0]['(Child) ASIN'],
-					values: "Units",
-					...unitsFormatted
-				}, 
-
-				{
-					asin: null	,
-					childasin: newData[x][0]['(Child) ASIN'],
-					values: "Sales",
-					...sales,
-				}, {
-					asin: null,
-					childasin: newData[x][0]['(Child) ASIN'],
-					values: "Sessions",
-					...sessionsFormatted
-				}, {
-					asin: null,
-					childasin: newData[x][0]['(Child) ASIN'],
-					values: "CVR",
-					...cvrFormatted,
-					total: (() => {
+			let tableRow = [
+				{asin: asinHTML(0),childasin: asin ,values: "Units",...unitsFormatted}, 
+				{asin: null, childasin: asin,values: "Sales",...sales,}, 
+				{asin: null, childasin: asin ,values: "Sessions",...sessionsFormatted}, 
+				{asin: null, childasin: asin ,values: "CVR",...cvrFormatted, total: (() => {
 					let show = isFinite(sessions.total / units.total);
 					let res = valueFormatter(sessions.total / units.total, 'cvr_total');
 					// let res =  sessions.total/units.total
@@ -618,7 +709,7 @@ const Tabulated = () => {
 		}
 		let newTable = [];
 		let salesIndex = 1
-
+		// tableRowArr = tableRowArr.sort( (a,b) => a.total - b.total)
 		tableRowArr.forEach(x => {
 			// x[2].total = valueFormatter(x[2].total, 'sales')
 
@@ -631,309 +722,104 @@ const Tabulated = () => {
 		});
 		tableRowArr = newTable;
 
-
-
+		console.log({tableRowArr})
+		setTableData(tableRowArr)
+		
 		return tableRowArr
 	}
 
-	const createTableRows = () => {
-		
-		console.log("creating table rows")
-
-   		let newtableData = createTableData()
-
-
-   		// newTableData = tableData.concat(addition)
-
-   		console.log({newtableData})
-	   	// setTableData(newTableData);
-   		setTableData(newtableData);
-
-	  };
-
-  	const setCurrentPageHandler = () => {
-  		console.log("setting current page")
-  		
-  		page = currentPage + 1
-  		setCurrentPage(page)
-  
-  	}
-
-  	const addData = async  () => { 
-  		
-		console.log("adding data")
-		// console.log(table)
-		let from = (listLimit * currentPage) - listLimit, to = listLimit * currentPage;
-	
-		let pageList = clients.slice(from, to)
-		
-		console.log({pageList, clients,currentPage, from , to})
-
-		if(clients.length < to) {
-			console.log("client list length is less than next page count")
-			setNoMoreData(true)	
+	const resetTable = () => {
+		if(env) {
+			setRawData([])
+			setTableData([])
+			table.setData([])
 		}
-
-		try {
-			let newData = await DOMO.getYearData(pageList)
-			let newDataList = pageList.map( x => newData.filter( xx => xx['Product ID'] == x))
-
-			newDataList = newDataList.filter( x => x.length > 0)
-
-			let totalData = data.concat(newDataList)
-
-			setData(totalData)
-
-		} catch (err) {
-			console.log({err})
 		
-		}finally{
-			setLoading(false)
-			load = false
-
-		}
-
-	}
-
-
-	const triggerLoadData = (top) => {
-		let offsetHeight = document.querySelector(".tabulator-table").offsetHeight	
-		let trigger = offsetHeight * .75;
-		// console.log({top, trigger, loadData: top  > trigger, loading })
-		if(top  > trigger && !loading) {		
-			
-			setScrollPosition(top - 100)
-			load = true
-			setLoading(true)	
-			
-		}
-	}
-
-	const resetTableHandler = () => {
-		console.log("reseting table data")
-		setNoMoreData(false)
-		setClientsCount(null)
-	
-		if(!clientsLoaded) setClients([])
-		setData([])
-		setTableData([])
-		setCurrentPage(null)
-		setScrollPosition(0)
-		setResetTable(false)
-		table.clearData()
-	}
-
-	const loadRestClientList = async () => {
-
-		Promise.all(loadFunctions.map( x => x())).then( result => {
-			
-			
-
-
-			let restClients = result.flat(1)
-
-			setClients([...clients, ...restClients])
-			
-		})
-	}	
-
-	const getClientList = async () => {
-
-		let limit = 10000;
-		let count = await DOMO.countAllClients()
-		console.log({count_getClientList: count})
-		setClientsCount(count)
-		
-		let chunks = Math.ceil(count/limit)
-		// console.log(count/limit)
-		console.log({chunks})
-		let functionsArray = []
-		for(let i = 0; i < chunks; i++) {
-	
-			functionsArray.push( () => DOMO.getClientTitles(limit, i))
-		}
-
-
-		
-
-		let firstBatch = await functionsArray[0]()
-		// console.log(loadFunctions.length)
-		setClients(firstBatch)
-		functionsArray.shift()
-		setLoadFunctions(functionsArray)
-
-		console.log(functionsArray.length)
-		return
-
-
-
 	}
 
 	useEffect(() => {
-		// console.log({clients2: clients})
-		loadRestClientList()
-	}, [loadFunctions])
 
-	useEffect(() => {
-		console.log({dataLoaded: data, tableData})
-		
-		if(data.length >= listLimit && weekDates.length > 0) {
-			// console.log({data})
-			createTableRows ()
-			// console.log("create table rows")
-			
-		}
+		if(weekDates.length > 0) createTableCols ();
 
-		if(noMoreData) createTableRows ()
-
-		if(data.length < listLimit && !noMoreData) {
-			console.log("list less than limit, loading more")
-			console.log({dataLength: data.length})
-			// setTableData(data)
-			setCurrentPageHandler() 
-		}
-
-	}, [data])
-
-
-	useEffect(() => {
-		
-		if(weekDates.length > 0) {
-			console.log("create table columns")
-			createTableCols()
-		;}
-	
 	}, [weekDates])
 
 	useEffect(() => {
-		
-		// let el = document.querySelector(".tabulator-tableholder")
-		if(tableData.length > 0) {
-			console.log('table data updated')
-			console.log({tableData})
-			tableDataLocal = tableData
-			// console.log({tableDataLocal})
-			table.setData(tableDataLocal);
-			if(currentPage > 1) document.querySelector(".tabulator-tableholder").scrollTop = scrollPosition
-			// el.scrollTo(0, scroll)
+		if(table && env) getClientList()
+	}, [table, env])
+
+	useEffect(() => {
 			
-		} 
-	}, [tableData])
-	useEffect(() => {
-		// console.log({currency, vendor})
-		
-		if(env && table) {
+		if(!clientListLoaded && clients.length > 0) {
 
-			resetTableHandler ()
-
-			// createTableRows ();
-		} 
-
-
-	}, [currency, vendor])
-
-	useEffect(() => {
-
-
-		
-		if(table){
-	 
+			console.log({clients})
 			
+			setPagesListHandler()
+			setClientListLoaded(true)
 
-			console.log("table created")
-
-			let addColumn = [
-				{title: "ASIN Description", field: "asin", frozen: true, width: 180, formatter: 'html', headerSort: false	},
-				{title: "(Child) ASIN", field: "childasin", frozen: true, headerSort: false},
-				];
-			Promise.all([
-				table.addColumn(addColumn[0], true, "values"),
-				table.addColumn(addColumn[1], true, "values")
-			]).then(resp => {
-				console.log("deleting columns")
-				table.hideColumn("childasin") 
-				table.hideColumn("asin") 
-			})
-			// addColumn.forEach( x => table.addColumn(x,true,"values"));
-
-
-
-			table.on("scrollVertical", function(top){
-			        //top - the current vertical scroll position
-				
-				let offsetHeight = document.querySelector(".tabulator-table").offsetHeight	
-				let clientHeight = document.querySelector(".tabulator-table").clientHeight	
-				let scrollHeight = document.querySelector(".tabulator-table").scrollHeight
-				// let scrollTop = document.querySelector(".tabulator-tableholder").scrollHeight
-				let trigger = (clientHeight) * .75
-				// console.log({top, trigger, loading, condition: top  > trigger && !loading})
-				// triggerLoadData(top, trigger)
-				triggerLoadData(top)
-				
-			});
-		}
-	}, [table])
-
-	useEffect(() => {
-		console.log({clientsCount, clients})
-
-		if(clients.length > 0 && !clientsLoaded) {
-			addData();	
-			setClientsLoaded(true)
 		}
 		
 	}, [clients])
 
-	useEffect( () => {
-		console.log({currentPage})
+	useEffect(() => {
 		
-		if(currentPage == null) setCurrentPage(1)
-		if(env && currentPage != null && table) {
-
-			if(!clientsLoaded) getClientList();
-			else addData();	
-			// 
-		}
-	}, [currentPage])
-
-	useEffect( () => {
-		console.log({loading})
-		load = loading
-
-		if(loading) {
-			console.log("trigger load data")
-			setCurrentPageHandler()
+		if(clientListLoaded) {
+			loadRestClientList()
 		} 
-	}, [loading])
-	useEffect( () => {
-		// console.log({context})
-		scroll = scrollPosition
-	}, [scrollPosition])	
+	}, [clientListLoaded])
+
+	// useEffect(() => {
+		
+	// 	if(loadFunctions.length > 0) {
+
+	// 		loadRestClientList()
+	// 	}
+	// }, [loadFunctions])
 
 	useEffect(() => {
-		if(resetTable) {
-			resetTableHandler()	
+		console.log({pageList})
+		if(pageList > 0 ) loadData ();
+	}, [pageList])
+
+	useEffect(() => {
+		console.log({rawData})
+		// if(rawData.length < pageLimit) {
+
+		// }
+		if(table && rawData.length > 0) {
+
+			table.setData(createTableData())
+		} 
+	}, [rawData])
+
+	useEffect(() => {
+		
+		// console.log("sorting table...");
+		// if(table) {
+		// 	table.setSort([
+		// 	    {column:"total", dir:"desc"}, //sort by this first
+			    
+		// 	]);
+		// }
+		if(table && tableData.length > 0) {
+			console.log("table loaded")
+			setTableLoading(false)
 		}
-	}, [resetTable])
+		
+		
+	}, [tableData])
 
 	useEffect(() => {
-		console.log({noMoreData})
-		// if(noMoreData) createTableRows()
-	}, [noMoreData])
-
-	useEffect(() => {
-		console.log({clientsLoaded})
-	}, [clientsLoaded])
-
+		console.log({pageNow})
+		resetTable()
+		loadData()
+	}, [pageNow])
 
 	return (
 		<div>
-			{/*clients: {clients.length}*/}
-			<div id="table" className="my-1 border border-secondary"></div>
+	
+			<div id="table"></div>
 		</div>
-		
-
-	)
+	)	
 }
 const Filters = () => {
 
@@ -1007,26 +893,98 @@ const Pagination = () => {
 
 	const {useState, useEffect, useContext} = React
 	const context = useContext(AppContext)
-	const { setPageNow, pageNow, pages} = context
+	const { pageNow, setPageNow, pageList, setPageList, pageLimit,tableLoading, setTableLoading, clients } = context
 
-	const setPageNowHandler = (page) => {
+	const [showSelectPage, setShowSelectPage] = useState(false)
+	const [page, setPage] = useState(null)
+	const [error, setError] = useState(false)
 
-		console.log({page})
 
-		setPageNow(page)
+	const setPageNowHandler = (to) => {
+		setTableLoading(true)
+		console.log({to})
+		let newPageNow = pageNow;
+		if(to == 'prev') {
+			if(newPageNow < 1) return;
+			newPageNow --
+		}
+		if(to == 'next') {
+			if(newPageNow >= pageList) return;
+			newPageNow++
+		}
+		setPageNow(newPageNow)
+		
 	}
+
+	const cancelSetPage = () => {
+		setError(false)
+		setPage(pageNow + 1)
+		 setShowSelectPage(false)
+	}
+
+	const goToPage = () => {
+		setError(false)
+		if(page < 1) {
+			console.log("page less than 1")
+			setError(true)
+			return;
+		}
+		if(page >= pageList) {
+			console.log("page more than pageLimit")
+			setError(true)
+			return
+		}
+
+		setPageNow(page - 1)
+		setShowSelectPage(false)
+	}
+
+	useEffect(() => {
+		console.log({tableLoading})
+	}, [tableLoading])
+
+	useEffect(() => {
+		console.log({showSelectPage})
+
+	}, [showSelectPage])
+
+	useEffect(() => {
+		setPage(pageNow + 1)
+	}, [pageNow])
 
 
 	return (
-		<ul className="pagination pagination-sm">
-			{[...new Array(pages)].map( (x, i) => (
-				<li 
-				onClick={e => setPageNowHandler(i + 1)}
-				className={"page-item " + (pageNow == (i + 1) ? 'active':'')}><span className="page-link">{i + 1}</span></li>
-			))
+		<div className="d-flex gap-1 justify-content-between">
+			<div>
+				<p>clients: {clients ? clients.length : null}, pages: {pageList}</p>
+			</div>
+			<div className="d-flex gap-1 ">
+				{/*{error && "error"}*/}
+				<button disabled={tableLoading} className = "btn btn-light btn-sm my-1" onClick={() => setPageNowHandler('prev')}> {"<"} </button>
+				{!showSelectPage ? <button className = "btn btn-light disabled btn-sm my-1" >{ pageNow + 1 } </button> : null}
+				{showSelectPage ?
+				<div className="d-flex gap-1">
+					<div className="align-self-center">
+						<input 
+						value={page} 
+						onChange={ e => setPage(e.target.value)}  
+						type="number" 
+						className={"form-control form-control-sm " +(error?"is-invalid":null)}
+						style={{width: 80}} />
+					</div>
+					<button onClick={() => goToPage()} className = "btn btn-primary btn-sm my-1" >&#10003;</button>
+					<button onClick={() => cancelSetPage()} className = "btn btn-secondary btn-sm  my-1" >&#10005;</button>
+				</div>
+				:
+				<button onClick={() => setShowSelectPage(true)} title={"select page"} disabled={tableLoading} className = "btn btn-light btn-sm my-1">...</button> 
+				}
+				
 
-			}
-		</ul>
+				<span className="align-self-center"> / </span>
+				<button className = "btn btn-light disabled btn-sm my-1">{pageList || "..."}</button>
+				<button disabled={tableLoading} className = "btn btn-light btn-sm my-1" onClick={() => setPageNowHandler('next')}> {">"} </button>
+			</div>
+		</div>
 	)
 }
 const Index = () => {
@@ -1034,11 +992,10 @@ const Index = () => {
 	const {useState, useEffect, useContext} = React
 	const context = useContext(AppContext)
 	const {
-		env, 
-		setEnv,
-		setData, 	
-		setResetTable,
-		setClientsLoaded
+		env, setEnv,
+			currency, setCurrency,
+			vendor, setVendor
+		
 	} = context
 
 	const getEnv = async () => {
@@ -1063,23 +1020,21 @@ const Index = () => {
 	useEffect(() => {
 		console.log(env ? 'live':'not live')
 		if(env) {
-			DOMO.onFilterUpdate(setData, filterUpdates, setClientsLoaded)
-			
-			setResetTable(true)
+			// DOMO.onFilterUpdate(setData, filterUpdates, setClientsLoaded)
+			// setResetTable(true)
+
+			DOMO.onFilterUpdate()
 		}
 	}, [env])
 
 
-
-
-
-
-	
-
 	return (
 		<div className="p-1">
 			<Filters />
-			<Tabulated />
+			{/*<Tabulated />*/}
+			
+			<TabulatedPagination/>
+			<Pagination />
 		</div>
 	)	
 }

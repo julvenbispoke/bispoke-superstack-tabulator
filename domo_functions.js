@@ -137,13 +137,8 @@ const DOMO = {
 		// return data
 
 	},
-	onFilterUpdate: async (setData, filterUpdates, setClientsLoaded) => {
-
-		
-
-		domo.onFiltersUpdate( e =>  {	
-			setClientsLoaded(false)
-			
+	onFilterUpdate: async () => {
+		domo.onFiltersUpdate(e => {
 			let operandWord = [
 				"GREATER_THAN", 
 				"GREAT_THAN_EQUALS_TO",
@@ -154,25 +149,22 @@ const DOMO = {
 				"NOT_EQUALS",
 				"IN"
 			];
+			let operandSql = [">",">=","<","<=","BETWEEN","=","<>","IN"];
 
-			let operandSql = [">",">=","<","<=","BETWEEN","=","<>","IN"]
 
 			let includeList = []
 			let queryList = []
 			let columnList = []
 
-			
-			
 			if(e.length == 0) {
 				
-				console.log("no filters")
+
 				DOMO.addQuery = ""
 				DOMO.addColumn = ""
-				// getClientList()
-				filterUpdates()
+			
 				return
 			}
-			
+
 			e.forEach( x => {
 				let operand = -1
 				operandWord.forEach( (xx, ii) => {
@@ -187,10 +179,10 @@ const DOMO = {
 				}
 				queryList.push(`"${x.column}" ${operandSql[operand]} ${formatValue}` )
 				columnList.push(x.column)
-				// console.log({operand, word: x.operand, sql: operandSql[operand], formatValue, values: x.values})
+
 			})
 
-			// console.log(queryList.join(" AND "), e)
+
 			queryList = queryList.join(" AND ")
 			DOMO.addQuery =  `WHERE ${queryList}`
 			DOMO.addColumn = (() => {
@@ -200,10 +192,71 @@ const DOMO = {
 				}
 				return columnList
 			})()
-			// getClientList()
-			filterUpdates()
-
 		})
-		return
 	}
+	// onFilterUpdate: async (setData, filterUpdates, setClientsLoaded) => {
+
+	// 	domo.onFiltersUpdate( e =>  {	
+	// 		setClientsLoaded(false)
+			
+	// 		let operandWord = [
+	// 			"GREATER_THAN", 
+	// 			"GREAT_THAN_EQUALS_TO",
+	// 			"LESS_THAN",
+	// 			"LESS_THAN_EQUALS_TO",
+	// 			"BETWEEN",
+	// 			"EQUALS",
+	// 			"NOT_EQUALS",
+	// 			"IN"
+	// 		];
+
+	// 		let operandSql = [">",">=","<","<=","BETWEEN","=","<>","IN"]
+
+	// 		let includeList = []
+	// 		let queryList = []
+	// 		let columnList = []
+	
+	// 		if(e.length == 0) {
+				
+	// 			console.log("no filters")
+	// 			DOMO.addQuery = ""
+	// 			DOMO.addColumn = ""
+	// 			// getClientList()
+	// 			filterUpdates()
+	// 			return
+	// 		}
+			
+	// 		e.forEach( x => {
+	// 			let operand = -1
+	// 			operandWord.forEach( (xx, ii) => {
+	// 				if(xx == x.operand) operand = ii
+	// 			})
+	// 			let formatValue = x.values;
+	// 			if(x.operand == "IN") {
+	// 				formatValue = `${(typeof x.values == "object") ? `(${x.values.map(xxx =>( typeof xxx) == 'string' ? `'${xxx}'`: xxx).join(",")})` : x.values}` 
+	// 			}
+	// 			if(x.operand  == "BETWEEN") {
+	// 				formatValue =  `${x.values[0]} AND ${x.values[1]}`
+	// 			}
+	// 			queryList.push(`"${x.column}" ${operandSql[operand]} ${formatValue}` )
+	// 			columnList.push(x.column)
+	// 			// console.log({operand, word: x.operand, sql: operandSql[operand], formatValue, values: x.values})
+	// 		})
+
+	// 		// console.log(queryList.join(" AND "), e)
+	// 		queryList = queryList.join(" AND ")
+	// 		DOMO.addQuery =  `WHERE ${queryList}`
+	// 		DOMO.addColumn = (() => {
+	// 			let columnString = "";
+	// 			if(columnList.length > 0) {
+	// 				columnString = `,${columnList.map( x => `"${x}"`).join(",")}`
+	// 			}
+	// 			return columnList
+	// 		})()
+	// 		// getClientList()
+	// 		filterUpdates()
+
+	// 	})
+	// 	return
+	// }
 }
