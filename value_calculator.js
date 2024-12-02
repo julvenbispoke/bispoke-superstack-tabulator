@@ -30,16 +30,16 @@ const valueCalculator =  (field, dataset, week, context) => {
 
 		let val1 = 0, val2 = 0
 
-		if(!vendor) {
+		if(!vendor) { //ordered revenue
 			// console.log({field, currency, vendor})
-			val1 = dataset.map( x => x['Units Ordered'] ? x['Units Ordered'] : 0)
-			val2 = dataset.map( x => x['Ordered Units - MFG'] ? x['Ordered Units - MFG'] : 0)
+			val1 = dataset.map( x => isFinite(x['Units Ordered']) ? x['Units Ordered'] : 0)
+			val2 = dataset.map( x => isFinite(x['Ordered Units - MFG']) ? x['Ordered Units - MFG'] : 0)
 
 		}
-		if(vendor) {
+		if(vendor) { //shipped cogs
 			// console.log({field, currency, vendor})
-			val1 = dataset.map( x => x['Units Ordered'] ? x['Units Ordered'] : 0)
-			val2 = dataset.map( x => x['Ordered Units - MFG'] ? x['Shipped Units - SRC'] : 0)
+			val1 = dataset.map( x => isFinite(x['Units Ordered']) ? x['Units Ordered'] : 0)
+			val2 = dataset.map( x => isFinite(x['Ordered Units - MFG']) ? x['Shipped Units - SRC'] : 0)
 		}
 
 		
@@ -60,26 +60,29 @@ const valueCalculator =  (field, dataset, week, context) => {
 		let val1 = 0, val2 = 0
 
 		if(!currency && !vendor) {
-			val1 = dataset.map( x => x['Foreign - Ordered Product Sales (OPS)'] ? x['Foreign - Ordered Product Sales (OPS)'] : 0)
-			val2 = dataset.map( x => x['Foreign - Ordered Revenue - MFG'] ? x['Foreign - Ordered Revenue - MFG'] : 0)
+			// console.log("local and ordered")
+			val1 = dataset.map( x => isFinite(x['Foreign - Ordered Product Sales (OPS)']) ? x['Foreign - Ordered Product Sales (OPS)'] : 0)
+			val2 = dataset.map( x => isFinite(x['Foreign - Ordered Revenue - MFG']) ? x['Foreign - Ordered Revenue - MFG'] : 0)
 
 		}
 
 		if(currency && !vendor) {
-
-			val1 = dataset.map( x => x['Foreign - Ordered Product Sales (OPS)'] ? x['Foreign - Ordered Product Sales (OPS)'] : 0)
-			val2 = dataset.map( x => x['Foreign - Shipped COGS - SRC'] ? x['Foreign - Shipped COGS - SRC'] : 0)
+			// console.log("usd and ordered")
+			val1 = dataset.map( x => isFinite(x['Foreign - Ordered Product Sales (OPS)']) ? x['Foreign - Ordered Product Sales (OPS)'] : 0)
+			val2 = dataset.map( x => isFinite(x['Foreign - Shipped COGS - SRC']) ? x['Foreign - Shipped COGS - SRC'] : 0)
 		}
 
 		if(currency && vendor) {
-			val1 = dataset.map( x => x['Ordered Product Sales (OPS)'] ? x['Ordered Product Sales (OPS)'] : 0)
-			val2 = dataset.map( x => x['Ordered Revenue - MFG'] ? x['Ordered Revenue - MFG'] : 0)
+			// console.log("usd and shipped")
+			val1 = dataset.map( x => isFinite(x['Ordered Product Sales (OPS)']) ? x['Ordered Product Sales (OPS)'] : 0)
+			val2 = dataset.map( x => isFinite(x['Ordered Revenue - MFG']) ? x['Ordered Revenue - MFG'] : 0)
 
 		}
 
 		if(!currency && vendor) {
-			val1 = dataset.map( x => x['Ordered Product Sales (OPS)'] ? x['Ordered Product Sales (OPS)'] : 0)
-			val2 = dataset.map( x => x['Shipped COGS - SRC'] ? x['Shipped COGS - SRC'] : 0)
+			// console.log("local and shipped")
+			val1 = dataset.map( x => isFinite(x['Ordered Product Sales (OPS)']) ? x['Ordered Product Sales (OPS)'] : 0)
+			val2 = dataset.map( x => isFinite(x['Shipped COGS - SRC']) ? x['Shipped COGS - SRC'] : 0)
 
 		}
 
@@ -95,8 +98,8 @@ const valueCalculator =  (field, dataset, week, context) => {
 	if(field == 'sessions') {
 
 
-		let val1 = dataset.map( x => x['Sessions'] ? x['Sessions'] : 0),
-			val2 = dataset.map( x => x['Glance Views'] ? x['Glance Views'] : 0)
+		let val1 = dataset.map( x => isFinite(x['Sessions']) ? x['Sessions'] : 0),
+			val2 = dataset.map( x => isFinite(x['Glance Views']) ? x['Glance Views'] : 0)
 
 			val1 = val1.reduce((partialSum, a) => partialSum + a, 0)
 			val2 = val2.reduce((partialSum, a) => partialSum + a, 0)

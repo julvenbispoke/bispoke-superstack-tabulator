@@ -19,6 +19,7 @@ const AppContextProvider = ({children}) => {
 
 	const [tableLoading, setTableLoading] = useState(false)
 
+	const [resetOnFilter, setResetOnFilter] = useState(false)
 
 	const numberWithCommas = (x) => {
         return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -51,7 +52,8 @@ const AppContextProvider = ({children}) => {
 			pageNow, setPageNow, pageLimit, 
 			numberWithCommas,
 			tableLoading, setTableLoading,
-			clients, setClients
+			clients, setClients,
+			resetOnFilter, setResetOnFilter,
 
 		}} >
 			{children}

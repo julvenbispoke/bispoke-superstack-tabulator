@@ -18,7 +18,8 @@ const Pagination = () => {
 			newPageNow --
 		}
 		if(to == 'next') {
-			if(newPageNow >= pageList) return;
+			console.log({newPageNow, pageList})
+			if(newPageNow + 1 >= pageList) return;
 			newPageNow++
 		}
 		setPageNow(newPageNow)
@@ -39,7 +40,7 @@ const Pagination = () => {
 			return;
 		}
 		if(page >= pageList) {
-			console.log("page more than pageLimit")
+			console.log("page more than pageLimit")	
 			setError(true)
 			return
 		}

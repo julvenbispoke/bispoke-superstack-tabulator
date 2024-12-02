@@ -8,10 +8,12 @@ const TabulatedPagination = () => {
 		table, setTable,
 		weekDates, setWeekDates,
 		pageList, setPageList,
-		pageLimit, pageNow,
+		pageLimit, pageNow, setPageNow,
 		numberWithCommas,
 		tableLoading, setTableLoading,
 		clients, setClients,
+		resetOnFilter, setResetOnFilter,
+		currency, vendor
 	} = context;
 
 	const [clientsCount, setClientsCount] = useState(null)
@@ -25,7 +27,7 @@ const TabulatedPagination = () => {
 	const createTableCols = () => {
 		console.log("creating table")
 		let initTable = new Tabulator('#table', {
-			height: '80vh',
+			height: '75vh',
 			reactiveData: true,
 			data: [],
 			groupBy: "childasin" ,
@@ -126,7 +128,7 @@ const TabulatedPagination = () => {
 			let newData = await DOMO.getYearData(list)
 			let newDataList = list.map( x => newData.filter( xx => xx['Product ID'] == x))
 
-			// newDataList = newDataList.filter( x => x.length > 0)
+			newDataList = newDataList.filter( x => x.length > 0)
 
 			
 
@@ -177,7 +179,11 @@ const TabulatedPagination = () => {
 		};
 
 		// data.forEach( x => {
-		let newData = rawData.filter(x => x.length > 0);
+		// let newData = rawData.filter(x => x.length > 0);
+
+
+		// console.log({rawData: rawData, newData: newData})
+		let newData = rawData;
 		for (let x in newData) {
 
 			// console.log({dataX: x})
@@ -240,7 +246,16 @@ const TabulatedPagination = () => {
 	}
 
 	const resetTable = () => {
+		console.log("initialize reset table")
 		if(env) {
+			if(resetOnFilter) {
+				setResetOnFilter(false)
+			
+				setClients([])
+				setClientListLoaded(false)
+				setPageList(null)
+				getClientList()
+			}
 			setRawData([])
 			setTableData([])
 			table.setData([])
@@ -321,9 +336,43 @@ const TabulatedPagination = () => {
 
 	useEffect(() => {
 		console.log({pageNow})
-		resetTable()
-		loadData()
+		if(pageNow == null) {
+			setPageNow(0)
+		}
+		if(pageNow != null) {
+			console.log("set page to "+ pageNow)
+			resetTable()
+			loadData()
+		}
+		
 	}, [pageNow])
+
+	useEffect(() => {
+		if(resetOnFilter && env) {
+			console.log("reseting table for filters")
+			resetTable()
+			
+			// setResetOnFilter(false)
+			// setPageNow(null)
+			// setClientListLoaded(false)
+			
+		}
+	}, [resetOnFilter])
+
+	useEffect(() => {
+		// console.log({currency, vendor})
+		if(table && env) {
+			
+			table.setData([])
+			// setRawData()
+			setTimeout(() => {
+				table.setData(createTableData())
+				// loadData()
+			}, 100)
+			
+		}
+		
+	}, [currency, vendor])
 
 	return (
 		<div>

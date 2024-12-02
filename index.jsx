@@ -4,8 +4,9 @@ const Index = () => {
 	const context = useContext(AppContext)
 	const {
 		env, setEnv,
-			currency, setCurrency,
-			vendor, setVendor
+		currency, setCurrency,
+		vendor, setVendor,
+		resetOnFilter, setResetOnFilter,
 		
 	} = context
 
@@ -16,7 +17,7 @@ const Index = () => {
 
 	const filterUpdates = () => {
 		console.log("filterUpdates")
-		setResetTable(true)
+		setResetOnFilter(true)
 	}
 
 	
@@ -34,10 +35,13 @@ const Index = () => {
 			// DOMO.onFilterUpdate(setData, filterUpdates, setClientsLoaded)
 			// setResetTable(true)
 
-			DOMO.onFilterUpdate()
+			DOMO.onFilterUpdate(filterUpdates)
 		}
 	}, [env])
 
+	useEffect(() => {
+		console.log({resetOnFilter})
+	}, [resetOnFilter])
 
 	return (
 		<div className="p-1">

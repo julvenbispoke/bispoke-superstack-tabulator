@@ -37,11 +37,12 @@ const DOMO = {
 		return env
 	},
 	countAllClients: async () => {
+		let sql = `SELECT COUNT(DISTINCT("Product ID")) AS count FROM dataset0 ${DOMO.addQuery}`;
 		 let counted = await domo.post('/sql/v1/dataset0',
 	    // `SELECT COUNT("Product ID") as counted FROM dataset0 GROUP BY "Product ID"`, 
-	    `SELECT COUNT(DISTINCT("Product ID")) AS count FROM dataset0 ${DOMO.addQuery}`,
+	    sql,
 		{contentType: 'text/plain'})
-
+		 console.log({countAllClients: sql})
 	    // console.log({counted})
 	    return counted.rows[0][0];
 	},
@@ -137,8 +138,10 @@ const DOMO = {
 		// return data
 
 	},
-	onFilterUpdate: async () => {
+	onFilterUpdate: async (filterUpdates) => {
+
 		domo.onFiltersUpdate(e => {
+
 			let operandWord = [
 				"GREATER_THAN", 
 				"GREAT_THAN_EQUALS_TO",
@@ -149,6 +152,7 @@ const DOMO = {
 				"NOT_EQUALS",
 				"IN"
 			];
+
 			let operandSql = [">",">=","<","<=","BETWEEN","=","<>","IN"];
 
 
@@ -157,14 +161,14 @@ const DOMO = {
 			let columnList = []
 
 			if(e.length == 0) {
-				
+				console.log("no filters")
 
-				DOMO.addQuery = ""
-				DOMO.addColumn = ""
-			
+				DOMO.addQuery = "";
+				DOMO.addColumn = "";
+				filterUpdates()
 				return
 			}
-
+			console.log("has filters")
 			e.forEach( x => {
 				let operand = -1
 				operandWord.forEach( (xx, ii) => {
@@ -192,6 +196,8 @@ const DOMO = {
 				}
 				return columnList
 			})()
+
+			filterUpdates()
 		})
 	}
 	// onFilterUpdate: async (setData, filterUpdates, setClientsLoaded) => {
